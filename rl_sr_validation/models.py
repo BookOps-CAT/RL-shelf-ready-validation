@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field, ConfigDict, model_validator, ValidationError
 from typing import Literal, Optional, Annotated
+from pydantic_core import InitErrorDetails, PydanticCustomError
 
 
 class Order(BaseModel):
@@ -14,11 +15,11 @@ class Order(BaseModel):
 
     model_config = ConfigDict(extra="ignore", validate_default=True)
 
-    price: Annotated[str, Field(pattern=r"^\d{3,}$")]
-    location: Literal[
+    order_price: Annotated[str, Field(pattern=r"^\d{3,}$")]
+    order_location: Literal[
         "MAB", "MAF", "MAG", "MAL", "MAP", "MAS", "PAD", "PAH", "PAM", "PAT", "SC"
     ]
-    fund: str  # should this follow a pattern?
+    order_fund: str  # should this follow a pattern?
 
 
 class Item(BaseModel):
@@ -41,129 +42,169 @@ class Item(BaseModel):
 
     model_config = ConfigDict(extra="ignore", validate_default=True)
 
-    call_tag: Literal["8528"]
-    call_no: str = Field(pattern=r"^ReCAP 23-\d{5}$")  # year is hardcoded, change this
-    barcode: str = Field(pattern=r"^\d{14}$")  # how are these formatted?
-    price: str = Field(pattern=r"^\d{1,}\.\d{2}$")
-    volume: Optional[str] = None
+    item_call_tag: Literal["8528"]
+    item_call_no: str = Field(
+        pattern=r"^ReCAP 23-\d{6}$|^ReCAP 24-\d{6}$"
+    )  # year is hardcoded, change this
+    item_barcode: str = Field(pattern=r"^\d{14}$")  # how are these formatted?
+    item_price: str = Field(pattern=r"^\d{1,}\.\d{2}$")
+    item_volume: Optional[str] = None
     item_message: Optional[str] = None  # uppercase only?
     message: Optional[str] = None  # uppercase only?
-    initials: Literal["EV", "AUXAM"]  # 3, 4, 5 digit code
-    agency: Optional[str] = None
-    location: Optional[str] = None
-    item_type: Optional[str] = None
+    item_vendor_code: Literal["EVIS", "AUXAM"]  # 3, 4, 5 digit code
+    item_agency: str
+    item_location: str
+    item_type: str
 
 
 class Invoice(BaseModel):
     """
     a class to define an invoice record from marc 980 field
     subfields include:
-    a: invoice date (required)
-    b: list price (required)
-    c: shipping cost (required)
-    d: sales tax
-    e: net ammount (required)
-    f: invoice number (required)
-    g: number of copies (required)
+        a: invoice date (required)
+        b: list price (required)
+        c: shipping cost (required)
+        d: sales tax
+        e: net ammount (required)
+        f: invoice number (required)
+        g: number of copies (required)
     """
 
     model_config = ConfigDict(extra="ignore", validate_default=True)
 
-    date: str
-    price: str = Field(pattern=r"^\d{3,}$")  # these prices all assume a minimum of $1
-    # shipping: str = Field(pattern=r"^\d{3}$")
-    # tax: str = Field(pattern=r"^\d{3}$")
-    # net_price: str = Field(pattern=r"^\d{3}$")
-    # invoice_number: str  # add pattern for AUX and EV invoice numbers if they have one
-    # copies: str = Field(pattern=r"^\d+$")  # this allows for many copies,  change?
+    invoice_date: str = Field(pattern=r"^\d{6}$")
+    invoice_price: str = Field(pattern=r"^\d{3,}$")
+    invoice_shipping: str = Field(pattern=r"^\d{1,}$")
+    invoice_tax: str = Field(pattern=r"^\d{1,}$")
+    invoice_net_price: str = Field(pattern=r"^\d{3,}$")
+    invoice_number: str  # add pattern for AUX and EV invoice numbers if they have one
+    invoice_copies: str = Field(pattern=r"^\d+$")
 
 
-class BibData(BaseModel):
-    """
-    a class to define bib data that should be validated
-    from marc fields 852, 901, 910, 050
-    fields/subfields include:
-        852$h: call number (required)
-        901$a: vendor code (required)
-        910$a: research libraries idenfier (required)
-        050: lcc
-    """
-
-    model_config = ConfigDict(extra="ignore", validate_default=True)
-
-    call_no: str = Field(pattern=r"^ReCAP 23-\d{5}$")  # year is hard coded, change this
-    vendor: Literal["AUXAM", "EV"]
-    rl_identifier: Literal["RL"]
-    lcc: str  # add a pattern?
+# class Bib(BaseModel):
+#     """
+#     a class to define bib data that should be validated
+#     from marc fields 852, 901, 910, 050
+#     fields/subfields include:
+#         852$h: call number (required)
+#         901$a: vendor code (required)
+#         910$a: research libraries idenfier (required)
+#         050: lcc
+#     """
 
 
 class Record(BaseModel):
     """
-    a class to define a full record, made up of Item, Order, Invoice, and BibData
+    a class to define a MARC record, made up of Item, Order, Invoice, and BibData
     this can then be used to validate combinations of data
     """
 
-    item_data: Item
-    order_data: Order
-    invoice_data: Invoice
-    bib_data: BibData
+    model_config = ConfigDict(extra="ignore", validate_default=True)
 
-    @model_validator(mode="after")
-    def check_location_combinations(self) -> "Record":
+    bib_call_no: str = Field(pattern=r"^ReCAP 23-\d{6}$|^ReCAP 24-\d{6}$")
+    bib_vendor_code: Literal["AUXAM", "EVP"]
+    rl_identifier: Literal["RL"]
+    lcc: str  # create an actual pattern
+    # is $a enough to confirm location correlation?
+
+    item: Item
+    order: Order
+    invoice: Invoice
+
+    @model_validator(mode="wrap")
+    def match_locations(self, handler) -> "Record":
         """
-        check that an instance of a Record contains a valid combination of order and item data
+        confirm that an instance of a Record contains a valid combination of:
+         - item location
+         - item type
+         - order location
+
+         # are there other fields that need to be validated in this way?
         """
-        match self:
-            case Record(
-                item_data=Item(location="rcmb2", item_type="2", agency="43"),
-                order_data=Order(location="MAB"),
+        validation_errors = []
+        item_location = self.get("item").get("item_location")
+        item_type = self.get("item").get("item_type")
+        order_location = self.get("order").get("order_location")
+
+        match (item_location, item_type, order_location):
+            case ("rcmb2", "2", "MAB") | ("rcmf2", "55", "MAF") | (
+                "rcmg2",
+                "55",
+                "MAG",
+            ) | ("rc2ma", "55", "MAL") | ("rcmp2", "2", "MAP") | (
+                "rcmb2",
+                "2",
+                "MAS",
+            ) | (
+                "rcph2",
+                "55",
+                "PAH",
+            ) | (
+                "rcpm2",
+                "55",
+                "PAM",
+            ) | (
+                "rcpt2",
+                "55",
+                "PAT",
+            ) | (
+                "rc2cf",
+                "55",
+                "SC",
             ):
-                print("item and order combination is valid for MAB")
-            case Record(
-                item_data=Item(location="rcmf2", item_type="55", agency="43"),
-                order_data=Order(location="MAF"),
-            ):
-                print("item and order combination is valid for MAF")
-            case Record(
-                item_data=Item(location="rcmg2", item_type="55", agency="43"),
-                order_data=Order(location="MAG"),
-            ):
-                print("item and order combination is valid for MAG")
-            case Record(
-                item_data=Item(location="rc2ma", item_type="55", agency="43"),
-                order_data=Order(location="MAL"),
-            ):
-                print("item and order combination is valid for MAL")
-            case Record(
-                item_data=Item(location="rcmp2", item_type="2", agency="43"),
-                order_data=Order(location="MAP"),
-            ):
-                print("item and order combination is valid for MAP")
-            case Record(
-                item_data=Item(location="rcmb2", item_type="2", agency="43"),
-                order_data=Order(location="MAS"),
-            ):
-                print("item and order combination is valid for MAS")
-            case Record(
-                item_data=Item(location="rcph2", item_type="55", agency="43"),
-                order_data=Order(location="PAH"),
-            ):
-                print("item and order combination is valid for PAH")
-            case Record(
-                item_data=Item(location="rcpm2", item_type="55", agency="43"),
-                order_data=Order(location="PAM"),
-            ):
-                print("item and order combination is valid for PAM")
-            case Record(
-                item_data=Item(location="rcpt2", item_type="55", agency="43"),
-                order_data=Order(location="PAT"),
-            ):
-                print("item and order combination is valid for PAT")
-            case Record(
-                item_data=Item(location="rc2cf", item_type="55", agency="43"),
-                order_data=Order(location="SC"),
-            ):
-                print("item and order combination is valid for SC")
+                print("Valid item_location/item_type/order_location combo")
+            case (None, *_):
+                validation_errors.append(
+                    InitErrorDetails(
+                        type=PydanticCustomError(
+                            "location_test",
+                            "could not check item_location, item_type, and order_location combination because item_location is missing",
+                        ),
+                        loc=("item", "item_location"),
+                        input=(self.get("item")),
+                    )
+                )
+            case (item_location, None, *_):
+                validation_errors.append(
+                    InitErrorDetails(
+                        type=PydanticCustomError(
+                            "location_test",
+                            "could not check item_location, item_type, and order_location combination because item_type is missing",
+                        ),
+                        loc=("item", "item_location"),
+                        input=(self.get("item")),
+                    )
+                )
+            case (item_location, item_type, None):
+                validation_errors.append(
+                    InitErrorDetails(
+                        type=PydanticCustomError(
+                            "location_test",
+                            "could not check item_location, item_type, and order_location combination because order_location is missing",
+                        ),
+                        loc=("order", "order_location"),
+                        input=(self.get("order")),
+                    )
+                )
             case _:
-                raise ValidationError("incorrect item/order combo")
-        return self
+                validation_errors.append(
+                    InitErrorDetails(
+                        type=PydanticCustomError(
+                            "location_test",
+                            "item_location, item_type, and order_location are not a valid combination",
+                        ),
+                        loc=("item_location", "item_type", "order_location"),
+                        input=(self),
+                    )
+                )
+        try:
+            # validate the model
+            validated_self = handler(self)
+        except ValidationError as e:
+            validation_errors.extend(e.errors())
+
+        if validation_errors:
+            raise ValidationError.from_exception_data(
+                title=self.__class__.__name__, line_errors=validation_errors
+            )
+        return validated_self
