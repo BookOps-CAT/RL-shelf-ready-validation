@@ -1,5 +1,11 @@
-from pydantic import BaseModel, Field, ConfigDict, model_validator, ValidationError
-from typing import Literal, Optional, Annotated
+from pydantic import (
+    BaseModel,
+    Field,
+    ConfigDict,
+    model_validator,
+    ValidationError,
+)
+from typing import Literal, Optional, Annotated, Union
 from pydantic_core import InitErrorDetails, PydanticCustomError
 
 
@@ -10,7 +16,6 @@ class Order(BaseModel):
         s: price (required)
         t: location code (required)
         u: fund code (required)
-
     """
 
     model_config = ConfigDict(extra="ignore", validate_default=True)
@@ -19,10 +24,10 @@ class Order(BaseModel):
     order_location: Literal[
         "MAB", "MAF", "MAG", "MAL", "MAP", "MAS", "PAD", "PAH", "PAM", "PAT", "SC"
     ]
-    order_fund: str  # should this follow a pattern?
+    order_fund: str
 
 
-class Item(BaseModel):
+class ItemRequired(BaseModel):
     """
     a class to define an item record from marc 949 field
     subfields include:
@@ -37,24 +42,52 @@ class Item(BaseModel):
         h: agency (required)
         l: location (required)
         t: item type (required)
-
     """
 
     model_config = ConfigDict(extra="ignore", validate_default=True)
 
+    material_type: Literal["monograph_record"]
     item_call_tag: Literal["8528"]
-    item_call_no: str = Field(
-        pattern=r"^ReCAP 23-\d{6}$|^ReCAP 24-\d{6}$"
-    )  # year is hardcoded, change this
-    item_barcode: str = Field(pattern=r"^\d{14}$")  # how are these formatted?
-    item_price: str = Field(pattern=r"^\d{1,}\.\d{2}$")
+    item_call_no: Annotated[str, Field(pattern=r"^ReCAP 23-\d{6}$|^ReCAP 24-\d{6}$")]
+    item_barcode: Annotated[
+        str, Field(pattern=r"^33433[0-9]{9}$|^33333[0-9]{9}$|^34444[0-9]{9}$")
+    ]
+    item_price: Annotated[str, Field(pattern=r"^\d{1,}\.\d{2}$")]
     item_volume: Optional[str] = None
-    item_message: Optional[str] = None  # uppercase only?
-    message: Optional[str] = None  # uppercase only?
-    item_vendor_code: Literal["EVIS", "AUXAM"]  # 3, 4, 5 digit code
+    item_message: Optional[Annotated[str, Field(pattern=r"^[^a-z]+")]] = None
+    message: Optional[Annotated[str, Field(pattern=r"^[^a-z]+")]] = None
+    item_vendor_code: Literal["EVP", "AUXAM"]
     item_agency: str
-    item_location: str
+    item_location: Literal[
+        "rcmb2",
+        "rcmf2",
+        "rcmg2",
+        "rc2ma",
+        "rcmp2",
+        "rcmb2",
+        "rcph2",
+        "rcpm2",
+        "rcpt2",
+        "rc2cf",
+    ]
     item_type: str
+
+
+class ItemNotRequired(BaseModel):
+    """
+    a class to define an item if the material type does not require one
+    MARC record should not have a 949 field
+    """
+
+    model_config = ConfigDict(extra="ignore", validate_default=True)
+    material_type: Literal[
+        "catalogue_raissonne",
+        "performing_arts_dance",
+        "multipart",
+        "incomplete_set",
+        "pamphlet",
+        "non-standard_binding_packaging",
+    ]
 
 
 class Invoice(BaseModel):
@@ -72,42 +105,33 @@ class Invoice(BaseModel):
 
     model_config = ConfigDict(extra="ignore", validate_default=True)
 
-    invoice_date: str = Field(pattern=r"^\d{6}$")
-    invoice_price: str = Field(pattern=r"^\d{3,}$")
-    invoice_shipping: str = Field(pattern=r"^\d{1,}$")
-    invoice_tax: str = Field(pattern=r"^\d{1,}$")
-    invoice_net_price: str = Field(pattern=r"^\d{3,}$")
-    invoice_number: str  # add pattern for AUX and EV invoice numbers if they have one
-    invoice_copies: str = Field(pattern=r"^\d+$")
-
-
-# class Bib(BaseModel):
-#     """
-#     a class to define bib data that should be validated
-#     from marc fields 852, 901, 910, 050
-#     fields/subfields include:
-#         852$h: call number (required)
-#         901$a: vendor code (required)
-#         910$a: research libraries idenfier (required)
-#         050: lcc
-#     """
+    invoice_date: Annotated[str, Field(pattern=r"^\d{6}$")]
+    invoice_price: Annotated[str, Field(pattern=r"^\d{3,}$")]
+    invoice_shipping: Annotated[str, Field(pattern=r"^\d{1,}$")]
+    invoice_tax: Annotated[str, Field(pattern=r"^\d{1,}$")]
+    invoice_net_price: Annotated[str, Field(pattern=r"^\d{3,}$")]
+    invoice_number: str
+    invoice_copies: Annotated[str, Field(pattern=r"^[0-9]+$")]
 
 
 class Record(BaseModel):
     """
-    a class to define a MARC record, made up of Item, Order, Invoice, and BibData
-    this can then be used to validate combinations of data
+    a class to define a MARC record, made up of Item, Order, and Invoice models
+    with additional bibliographic data
     """
 
     model_config = ConfigDict(extra="ignore", validate_default=True)
 
-    bib_call_no: str = Field(pattern=r"^ReCAP 23-\d{6}$|^ReCAP 24-\d{6}$")
+    bib_call_no: Optional[
+        Annotated[str, Field(pattern=r"^ReCAP 23-\d{6}$|^ReCAP 24-\d{6}$")]
+    ] = None
     bib_vendor_code: Literal["AUXAM", "EVP"]
     rl_identifier: Literal["RL"]
-    lcc: str  # create an actual pattern
-    # is $a enough to confirm location correlation?
+    lcc: str
 
-    item: Item
+    item: Union[ItemRequired, ItemNotRequired] = Field(
+        ..., discriminator="material_type"
+    )
     order: Order
     invoice: Invoice
 
@@ -115,6 +139,7 @@ class Record(BaseModel):
     def match_locations(self, handler) -> "Record":
         """
         confirm that an instance of a Record contains a valid combination of:
+         - material type
          - item location
          - item type
          - order location
@@ -122,38 +147,60 @@ class Record(BaseModel):
          # are there other fields that need to be validated in this way?
         """
         validation_errors = []
+        material_type = self.get("item").get("material_type")
         item_location = self.get("item").get("item_location")
         item_type = self.get("item").get("item_type")
         order_location = self.get("order").get("order_location")
-
-        match (item_location, item_type, order_location):
-            case ("rcmb2", "2", "MAB") | ("rcmf2", "55", "MAF") | (
+        match (material_type, item_location, item_type, order_location):
+            case ("monograph_record", "rcmb2", "2", "MAB") | (
+                "monograph_record",
+                "rcmf2",
+                "55",
+                "MAF",
+            ) | (
+                "monograph_record",
                 "rcmg2",
                 "55",
                 "MAG",
-            ) | ("rc2ma", "55", "MAL") | ("rcmp2", "2", "MAP") | (
+            ) | (
+                "monograph_record",
+                "rc2ma",
+                "55",
+                "MAL",
+            ) | (
+                "monograph_record",
+                "rcmp2",
+                "2",
+                "MAP",
+            ) | (
+                "monograph_record",
                 "rcmb2",
                 "2",
                 "MAS",
             ) | (
+                "monograph_record",
                 "rcph2",
                 "55",
                 "PAH",
             ) | (
+                "monograph_record",
                 "rcpm2",
                 "55",
                 "PAM",
             ) | (
+                "monograph_record",
                 "rcpt2",
                 "55",
                 "PAT",
             ) | (
+                "monograph_record",
                 "rc2cf",
                 "55",
                 "SC",
             ):
-                print("Valid item_location/item_type/order_location combo")
-            case (None, *_):
+                pass
+                # print("Valid item_location/item_type/order_location combo")
+            case ("monograph_record", None, *_):
                 validation_errors.append(
                     InitErrorDetails(
                         type=PydanticCustomError(
@@ -164,7 +211,7 @@ class Record(BaseModel):
                         input=(self.get("item")),
                     )
                 )
-            case (item_location, None, *_):
+            case ("monograph_record", item_location, None, *_):
                 validation_errors.append(
                     InitErrorDetails(
                         type=PydanticCustomError(
@@ -175,7 +222,7 @@ class Record(BaseModel):
                         input=(self.get("item")),
                     )
                 )
-            case (item_location, item_type, None):
+            case ("monograph_record", item_location, item_type, None):
                 validation_errors.append(
                     InitErrorDetails(
                         type=PydanticCustomError(
@@ -186,6 +233,69 @@ class Record(BaseModel):
                         input=(self.get("order")),
                     )
                 )
+            case (
+                "catalog_raissonne"
+                | "performing_arts_dance"
+                | "multipart"
+                | "incomplete_set"
+                | "pamphlet"
+                | "non-standard_binding_packaging",
+                None,
+                None,
+                None,
+            ):
+                pass
+            case (
+                "catalog_raissonne"
+                | "performing_arts_dance"
+                | "multipart"
+                | "incomplete_set"
+                | "pamphlet"
+                | "non-standard_binding_packaging",
+                None,
+                None,
+                *_,
+            ):
+                pass
+            case (
+                "catalog_raissonne"
+                | "performing_arts_dance"
+                | "multipart"
+                | "incomplete_set"
+                | "pamphlet"
+                | "non-standard_binding_packaging",
+                None,
+                *_,
+            ):
+                validation_errors.append(
+                    InitErrorDetails(
+                        type=PydanticCustomError(
+                            "location_test",
+                            "this material type should not have an item record",
+                        ),
+                        loc=("item", "item_type"),
+                        input=(self.get("item")),
+                    )
+                )
+            case (
+                "catalog_raissonne"
+                | "performing_arts_dance"
+                | "multipart"
+                | "incomplete_set"
+                | "pamphlet"
+                | "non-standard_binding_packaging",
+                *_,
+            ):
+                validation_errors.append(
+                    InitErrorDetails(
+                        type=PydanticCustomError(
+                            "location_test",
+                            "this material type should not have an item record",
+                        ),
+                        loc=("item", "item_location"),
+                        input=(self.get("item")),
+                    )
+                )
             case _:
                 validation_errors.append(
                     InitErrorDetails(
@@ -194,7 +304,12 @@ class Record(BaseModel):
                             "item_location, item_type, and order_location are not a valid combination",
                         ),
                         loc=("item_location", "item_type", "order_location"),
-                        input=(self),
+                        input=(
+                            self.get("item").get("material_type"),
+                            self.get("item").get("item_location"),
+                            self.get("item").get("item_type"),
+                            self.get("order").get("order_location"),
+                        ),
                     )
                 )
         try:
@@ -208,3 +323,66 @@ class Record(BaseModel):
                 title=self.__class__.__name__, line_errors=validation_errors
             )
         return validated_self
+
+    @model_validator(mode="after")
+    def check_required_call_no(self) -> "Record":
+        """
+        check material type of instance of Record
+        confirm it has a call_no if necessary
+        """
+        validation_errors = []
+        bib_call_no = self.bib_call_no
+        material_type = self.item.material_type
+        match (material_type, bib_call_no):
+            case ("monograph_record", None):
+                validation_errors.append(
+                    InitErrorDetails(
+                        type=PydanticCustomError(
+                            "call_no_missing",
+                            "record for this material type should have a call_no",
+                        ),
+                        loc=("material_type", "bib_call_no"),
+                        input=(self.get("item")),
+                    )
+                )
+            case (
+                "catalog_raissonne"
+                | "performing_arts_dance"
+                | "multipart"
+                | "incomplete_set"
+                | "pamphlet"
+                | "non-standard_binding_packaging",
+                None,
+            ):
+                pass
+            case (
+                "catalog_raissonne"
+                | "performing_arts_dance"
+                | "multipart"
+                | "incomplete_set"
+                | "pamphlet"
+                | "non-standard_binding_packaging",
+                *_,
+            ):
+                validation_errors.append(
+                    InitErrorDetails(
+                        type=PydanticCustomError(
+                            "call_no_test",
+                            "records for this material type should not have a call_no",
+                        ),
+                        loc=("material_type", "bib_call_no"),
+                        input=(self),
+                    )
+                )
+            case _:
+                validation_errors.append(
+                    InitErrorDetails(
+                        type=PydanticCustomError(
+                            "call_no_test",
+                            "something is wrong with call_no/material_type combination",
+                        ),
+                        loc=("material_type", "bib_call_no"),
+                        input=(self),
+                    )
+                )
+        return self

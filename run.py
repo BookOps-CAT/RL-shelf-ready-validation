@@ -1,45 +1,126 @@
-from rl_sr_validation.models import Record
-from pydantic import ValidationError
-from rich import print
-from pymarc import MARCReader
+from rl_sr_validation.errors import validate_records
 
-with open("temp/EastView-sample.mrc", "rb") as f:
-    reader = MARCReader(f)
-    for record in reader:
-        dict_output = {
-            "item": {
-                "item_call_tag": record.get("949").get("z"),
-                "item_call_no": record.get("949").get("a"),
-                "item_barcode": record.get("949").get("i"),
-                "item_price": record.get("949").get("p"),
-                "item_volume": record.get("949").get("c"),
-                "item_message": record.get("949").get("u"),
-                "message": record.get("949").get("m"),
-                "item_vendor_code": record.get("949").get("v"),
-                "item_agency": record.get("949").get("h"),
-                "item_location": record.get("949").get("l"),
-                "item_type": record.get("949").get("t"),
-            },
-            "order": {
-                "order_price": record.get("960").get("s"),
-                "order_location": record.get("960").get("t"),
-                "order_fund": record.get("960").get("u"),
-            },
-            "invoice": {
-                "invoice_date": record.get("980").get("a"),
-                "invoice_price": record.get("980").get("b"),
-                "invoice_shipping": record.get("980").get("c"),
-                "invoice_tax": record.get("980").get("d"),
-                "invoice_net_price": record.get("980").get("e"),
-                "invoice_number": record.get("980").get("f"),
-                "invoice_copies": record.get("980").get("g"),
-            },
-            "bib_call_no": record.get("852").get("h"),
-            "bib_vendor_code": record.get("901").get("a"),
-            "rl_identifier": record.get("910").get("a"),
-            "lcc": record.get("050").get("a"),
-        }
-        try:
-            Record(**dict_output)
-        except ValidationError as e:
-            print(e.errors())
+valid_bpl_record = {
+    "item": {
+        "material_type": "monograph_record",
+        "item_call_tag": "8528",
+        "item_call_no": "ReCAP 23-999999",
+        "item_barcode": "34444678901234",
+        "item_price": "12.34",
+        "item_vendor_code": "EVP",
+        "item_location": "rcmb2",
+        "item_type": "2",
+        "item_agency": "43",
+    },
+    "order": {
+        "order_location": "MAB",
+        "order_price": "1234",
+        "order_fund": "123456apprv",
+    },
+    "invoice": {
+        "invoice_date": "240101",
+        "invoice_price": "1234",
+        "invoice_shipping": "100",
+        "invoice_tax": "123",
+        "invoice_net_price": "1234",
+        "invoice_number": "1234567890",
+        "invoice_copies": "1",
+    },
+    "bib_call_no": "ReCAP 23-999999",
+    "bib_vendor_code": "EVP",
+    "rl_identifier": "RL",
+    "lcc": "Z123",
+}
+valid_pamphlet_record = {
+    "item": {
+        "material_type": "pamphlet",
+    },
+    "order": {
+        "order_location": "MAB",
+        "order_price": "1234",
+        "order_fund": "123456apprv",
+    },
+    "invoice": {
+        "invoice_date": "240101",
+        "invoice_price": "1234",
+        "invoice_shipping": "100",
+        "invoice_tax": "123",
+        "invoice_net_price": "1234",
+        "invoice_number": "1234567890",
+        "invoice_copies": "1",
+    },
+    "bib_vendor_code": "EVP",
+    "rl_identifier": "RL",
+    "lcc": "Z123",
+}
+invalid_bpl_record = {
+    "item": {
+        "material_type": "monograph_record",
+        "item_call_tag": "8528",
+        "item_call_no": "ReCAP 23-999999",
+        "item_barcode": "12345678901234",
+        "item_price": "12.34",
+        "item_vendor_code": "EVP",
+        "item_location": "rcmb2",
+        "item_type": "55",
+        "item_agency": "43",
+    },
+    "order": {
+        "order_location": "MAB",
+        "order_price": "1234",
+        "order_fund": "123456apprv",
+    },
+    "invoice": {
+        "invoice_date": "240101",
+        "invoice_price": "1234",
+        "invoice_shipping": "100",
+        "invoice_tax": "123",
+        "invoice_net_price": "1234",
+        "invoice_number": "1234567890",
+        "invoice_copies": "1",
+    },
+    "bib_call_no": "ReCAP 23-999999",
+    "bib_vendor_code": "EVP",
+    "rl_identifier": "RL",
+    "lcc": "Z123",
+}
+invalid_pamphlet_record = {
+    "item": {
+        "material_type": "pamphlet",
+        "item_call_tag": "8528",
+        "item_call_no": "ReCAP 23-999999",
+        "item_barcode": "34444678901234",
+        "item_price": "12.34",
+        "item_vendor_code": "EVP",
+        "item_location": "rcmb2",
+        "item_type": "2",
+        "item_agency": "43",
+    },
+    "order": {
+        "order_location": "MAB",
+        "order_price": "1234",
+        "order_fund": "123456apprv",
+    },
+    "invoice": {
+        "invoice_date": "240101",
+        "invoice_price": "1234",
+        "invoice_shipping": "100",
+        "invoice_tax": "123",
+        "invoice_net_price": "1234",
+        "invoice_number": "1234567890",
+        "invoice_copies": "1",
+    },
+    "bib_call_no": "ReCAP 23-999999",
+    "bib_vendor_code": "EVP",
+    "rl_identifier": "RL",
+    "lcc": "Z123",
+}
+
+records = [
+    valid_bpl_record,
+    valid_pamphlet_record,
+    invalid_bpl_record,
+    invalid_pamphlet_record,
+]
+
+validate_records(records)
