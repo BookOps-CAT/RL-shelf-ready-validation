@@ -6,7 +6,7 @@ authors = ["Charlotte Kostelic <charlottekostelic@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.10"
 pydantic = "^2.5.3"
 pymarc = "^5.1.0"
 rich = "^13.7.0"
