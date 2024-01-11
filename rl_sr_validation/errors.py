@@ -15,9 +15,12 @@ def parse_errors(e):
         error_locs.append(error_loc)
     missing_field_count = error_types.count("missing")
     format_error_count = error_types.count("string_pattern_mismatch")
-    return {"missing_field_count": missing_field_count,
-            "format_error_count": format_error_count,
-            "errors": errors, "error_count": error_count}
+    return {
+        "missing_field_count": missing_field_count,
+        "format_error_count": format_error_count,
+        "errors": errors,
+        "error_count": error_count,
+    }
 
 
 def validate_records(r):
@@ -29,4 +32,6 @@ def validate_records(r):
             print(f"Record {n} validates.")
         except ValidationError as e:
             parsed_errors = parse_errors(e)
-            print(f"Record {n} is not valid. This record contains {parsed_errors["error_count"]} errors including: {parsed_errors["missing_field_count"]} missing field(s) and {parsed_errors["format_error_count"]} incorrectly formatted field(s).")
+            print(
+                f"Record {n} is not valid. This record contains {parsed_errors['error_count']} errors including: {parsed_errors['missing_field_count']} missing field(s) and {parsed_errors['format_error_count']} incorrectly formatted field(s)."
+            )
