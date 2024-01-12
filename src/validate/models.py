@@ -79,7 +79,7 @@ class ItemNotRequired(BaseModel):
     MARC record should not have a 949 field
     """
 
-    model_config = ConfigDict(extra="ignore", validate_default=True)
+    model_config = ConfigDict(extra="forbid", validate_default=True)
     material_type: Literal[
         "catalogue_raissonne",
         "performing_arts_dance",
@@ -143,8 +143,6 @@ class Record(BaseModel):
          - item location
          - item type
          - order location
-
-         # are there other fields that need to be validated in this way?
         """
         validation_errors = []
         material_type = self.get("item").get("material_type")
@@ -199,13 +197,12 @@ class Record(BaseModel):
                 "SC",
             ):
                 pass
-                # print("Valid item_location/item_type/order_location combo")
             case ("monograph_record", None, *_):
                 validation_errors.append(
                     InitErrorDetails(
                         type=PydanticCustomError(
-                            "location_test",
-                            "could not check item_location, item_type, and order_location combination because item_location is missing",
+                            "Item/Order location check",
+                            "Could not compare Item and Order records because item_location is missing.",
                         ),
                         loc=("item", "item_location"),
                         input=(self.get("item")),
@@ -215,8 +212,8 @@ class Record(BaseModel):
                 validation_errors.append(
                     InitErrorDetails(
                         type=PydanticCustomError(
-                            "location_test",
-                            "could not check item_location, item_type, and order_location combination because item_type is missing",
+                            "Item/Order location check",
+                            "Could not compare Item and Order records because item_type is missing.",
                         ),
                         loc=("item", "item_location"),
                         input=(self.get("item")),
@@ -226,8 +223,8 @@ class Record(BaseModel):
                 validation_errors.append(
                     InitErrorDetails(
                         type=PydanticCustomError(
-                            "location_test",
-                            "could not check item_location, item_type, and order_location combination because order_location is missing",
+                            "Item/Order location check",
+                            "Could not compare Item and Order records because order_location is missing.",
                         ),
                         loc=("order", "order_location"),
                         input=(self.get("order")),
@@ -240,72 +237,18 @@ class Record(BaseModel):
                 | "incomplete_set"
                 | "pamphlet"
                 | "non-standard_binding_packaging",
-                None,
-                None,
-                None,
-            ):
-                pass
-            case (
-                "catalog_raissonne"
-                | "performing_arts_dance"
-                | "multipart"
-                | "incomplete_set"
-                | "pamphlet"
-                | "non-standard_binding_packaging",
-                None,
-                None,
                 *_,
             ):
                 pass
-            case (
-                "catalog_raissonne"
-                | "performing_arts_dance"
-                | "multipart"
-                | "incomplete_set"
-                | "pamphlet"
-                | "non-standard_binding_packaging",
-                None,
-                *_,
-            ):
-                validation_errors.append(
-                    InitErrorDetails(
-                        type=PydanticCustomError(
-                            "location_test",
-                            "this material type should not have an item record",
-                        ),
-                        loc=("item", "item_type"),
-                        input=(self.get("item")),
-                    )
-                )
-            case (
-                "catalog_raissonne"
-                | "performing_arts_dance"
-                | "multipart"
-                | "incomplete_set"
-                | "pamphlet"
-                | "non-standard_binding_packaging",
-                *_,
-            ):
-                validation_errors.append(
-                    InitErrorDetails(
-                        type=PydanticCustomError(
-                            "location_test",
-                            "this material type should not have an item record",
-                        ),
-                        loc=("item", "item_location"),
-                        input=(self.get("item")),
-                    )
-                )
             case _:
                 validation_errors.append(
                     InitErrorDetails(
                         type=PydanticCustomError(
-                            "location_test",
-                            "item_location, item_type, and order_location are not a valid combination",
+                            "Item/Order location check",
+                            "(item_location, item_type, order_location) combination is not valid.",
                         ),
                         loc=("item_location", "item_type", "order_location"),
                         input=(
-                            self.get("item").get("material_type"),
                             self.get("item").get("item_location"),
                             self.get("item").get("item_type"),
                             self.get("order").get("order_location"),
@@ -313,7 +256,7 @@ class Record(BaseModel):
                     )
                 )
         try:
-            # validate the model
+            # after checking item/order information, validate the model
             validated_self = handler(self)
         except ValidationError as e:
             validation_errors.extend(e.errors())

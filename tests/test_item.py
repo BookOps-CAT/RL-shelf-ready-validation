@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 from contextlib import nullcontext
-from rl_sr_validation.models import ItemRequired, ItemNotRequired
+from src.validate.models import ItemRequired, ItemNotRequired
 
 
 @pytest.mark.parametrize("material_type", ["monograph_record"])

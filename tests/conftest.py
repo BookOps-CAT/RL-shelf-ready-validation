@@ -312,3 +312,51 @@ def missing_fields():
         "lcc": "Z123",
     }
     return missing_fields
+
+
+@pytest.fixture
+def string_pattern_mismatch_error():
+    string_pattern_mismatch_error = {
+        "type": "string_pattern_mismatch",
+        "loc": ("item", "monograph_record", "item_barcode"),
+        "msg": "String should match pattern '^33433[0-9]{9}$|^33333[0-9]{9}$|^34444[0-9]{9}$'",
+        "input": "ReCAP 23-99999",
+        "ctx": {"pattern": "^33433[0-9]{9}$|^33333[0-9]{9}$|^34444[0-9]{9}$"},
+    }
+    return string_pattern_mismatch_error
+
+
+@pytest.fixture
+def invalid_barcode_record():
+    invalid_barcode_record = {
+        "item": {
+            "material_type": "monograph_record",
+            "item_call_tag": "8528",
+            "item_call_no": "ReCAP 23-999999",
+            "item_barcode": "12345678901234",
+            "item_price": "12.34",
+            "item_vendor_code": "EVP",
+            "item_location": "rcmb2",
+            "item_type": "2",
+            "item_agency": "43",
+        },
+        "order": {
+            "order_location": "MAB",
+            "order_price": "1234",
+            "order_fund": "123456apprv",
+        },
+        "invoice": {
+            "invoice_date": "240101",
+            "invoice_price": "1234",
+            "invoice_shipping": "100",
+            "invoice_tax": "123",
+            "invoice_net_price": "1234",
+            "invoice_number": "1234567890",
+            "invoice_copies": "1",
+        },
+        "bib_call_no": "ReCAP 23-999999",
+        "bib_vendor_code": "EVP",
+        "rl_identifier": "RL",
+        "lcc": "Z123",
+    }
+    return invalid_barcode_record

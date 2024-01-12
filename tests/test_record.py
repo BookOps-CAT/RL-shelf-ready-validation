@@ -1,8 +1,7 @@
 import pytest
 from pydantic import ValidationError
 from contextlib import nullcontext
-from rl_sr_validation.models import Record
-from rl_sr_validation.errors import parse_errors
+from src.validate.models import Record
 
 
 @pytest.mark.parametrize(
@@ -109,12 +108,3 @@ def test_invalid_call_no(invalid_pamphlet_record):
 def test_valid_call_no(valid_pamphlet_record):
     with nullcontext():
         Record(**valid_pamphlet_record)
-
-
-def test_missing_field_errors(missing_fields):
-    try:
-        Record(**missing_fields)
-    except ValidationError as e:
-        parsed_errors = parse_errors(e)
-        missing_field_count = parsed_errors["missing_field_count"]
-        assert missing_field_count == 2

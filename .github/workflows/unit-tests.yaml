@@ -1,5 +1,5 @@
 name: tests
-on: [push, pull_request]
+on: [pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -17,7 +17,7 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r dev-requirements.txt
       - name: Run tests
-        run: python -m pytest --cov=rl_sr_validation/
+        run: python -m pytest --cov=src/
       - name: Send report to Coveralls
         uses: AndreMiras/coveralls-python-action@develop
         with:
