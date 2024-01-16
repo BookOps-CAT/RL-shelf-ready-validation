@@ -90,21 +90,41 @@ def test_record_valid_combo(order_location, item_location):
         )
 
 
-def test_location_combo(invalid_bpl_record):
+def test_location_combo(valid_nypl_rl_record):
+    valid_nypl_rl_record["item"]["item_type"] = "55"
     with pytest.raises(ValidationError):
-        Record(**invalid_bpl_record)
+        Record(**valid_nypl_rl_record)
 
 
-def test_valid_record(valid_bpl_record):
+def test_valid_record(valid_nypl_rl_record):
     with nullcontext():
-        Record(**valid_bpl_record)
+        Record(**valid_nypl_rl_record)
 
 
-def test_invalid_call_no(invalid_pamphlet_record):
+def test_invalid_call_no(valid_pamphlet_record):
+    valid_pamphlet_record["item"]["item_call_tag"] = "8528"
     with pytest.raises(ValidationError):
-        Record(**invalid_pamphlet_record)
+        Record(**valid_pamphlet_record)
 
 
 def test_valid_call_no(valid_pamphlet_record):
     with nullcontext():
         Record(**valid_pamphlet_record)
+
+
+def test_missing_location(valid_nypl_rl_record):
+    del valid_nypl_rl_record["item"]["item_location"]
+    with pytest.raises(ValidationError):
+        Record(**valid_nypl_rl_record)
+
+
+def test_missing_item_type(valid_nypl_rl_record):
+    del valid_nypl_rl_record["item"]["item_type"]
+    with pytest.raises(ValidationError):
+        Record(**valid_nypl_rl_record)
+
+
+def test_missing_order_location(valid_nypl_rl_record):
+    del valid_nypl_rl_record["order"]["order_location"]
+    with pytest.raises(ValidationError):
+        Record(**valid_nypl_rl_record)

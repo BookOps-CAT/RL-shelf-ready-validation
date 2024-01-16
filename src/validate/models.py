@@ -125,7 +125,7 @@ class Record(BaseModel):
     bib_call_no: Optional[
         Annotated[str, Field(pattern=r"^ReCAP 23-\d{6}$|^ReCAP 24-\d{6}$")]
     ] = None
-    bib_vendor_code: Literal["AUXAM", "EVP"]
+    bib_vendor_code: Literal["EVP", "AUXAM"]
     rl_identifier: Literal["RL"]
     lcc: str
 
@@ -245,7 +245,7 @@ class Record(BaseModel):
                     InitErrorDetails(
                         type=PydanticCustomError(
                             "Item/Order location check",
-                            "(item_location, item_type, order_location) combination is not valid.",
+                            "item_location/item_type/order_location combination is not valid.",
                         ),
                         loc=("item_location", "item_type", "order_location"),
                         input=(
@@ -277,17 +277,6 @@ class Record(BaseModel):
         bib_call_no = self.bib_call_no
         material_type = self.item.material_type
         match (material_type, bib_call_no):
-            case ("monograph_record", None):
-                validation_errors.append(
-                    InitErrorDetails(
-                        type=PydanticCustomError(
-                            "call_no_missing",
-                            "record for this material type should have a call_no",
-                        ),
-                        loc=("material_type", "bib_call_no"),
-                        input=(self.get("item")),
-                    )
-                )
             case (
                 "catalog_raissonne"
                 | "performing_arts_dance"
@@ -298,25 +287,6 @@ class Record(BaseModel):
                 None,
             ):
                 pass
-            case (
-                "catalog_raissonne"
-                | "performing_arts_dance"
-                | "multipart"
-                | "incomplete_set"
-                | "pamphlet"
-                | "non-standard_binding_packaging",
-                *_,
-            ):
-                validation_errors.append(
-                    InitErrorDetails(
-                        type=PydanticCustomError(
-                            "call_no_test",
-                            "records for this material type should not have a call_no",
-                        ),
-                        loc=("material_type", "bib_call_no"),
-                        input=(self),
-                    )
-                )
             case _:
                 validation_errors.append(
                     InitErrorDetails(
