@@ -1,14 +1,8 @@
 from pydantic import ValidationError
-from rich.style import Style
-
-error_style = Style(color="#23120c", bold=True)
-other_info = Style(color="#f4dd76", bold=True)
 
 
 def string_errors(error):
-    locs = list(error["loc"])
-    last_loc = locs[-1]
-    new_error = {"type": error["type"], "loc": last_loc, "input": error["input"]}
+    new_error = {"type": error["type"], "loc": error["loc"], "input": error["input"]}
     match (error["type"], error["loc"], error["ctx"]):
         case (
             "string_pattern_mismatch",
@@ -74,9 +68,7 @@ def string_errors(error):
 
 
 def literal_errors(error):
-    locs = list(error["loc"])
-    last_loc = locs[-1]
-    new_error = {"type": error["type"], "loc": last_loc, "input": error["input"]}
+    new_error = {"type": error["type"], "loc": error["loc"], "input": error["input"]}
     match (error["type"], error["ctx"]):
         case (
             "literal_error",
@@ -98,7 +90,6 @@ def literal_errors(error):
             return new_error
         case (
             "literal_error",
-            ("item", "monograph_record", "item_location"),
             {
                 "expected": "'rcmb2', 'rcmf2', 'rcmg2', 'rc2ma', 'rcmp2', 'rcph2', 'rcpm2', 'rcpt2' or 'rc2cf'"
             },
@@ -117,72 +108,67 @@ def literal_errors(error):
             pass
 
 
-def extra_field_errors(error):
-    locs = list(error["loc"])
-    last_loc = locs[-1]
-    new_error = {"type": error["type"], "loc": last_loc, "input": error["input"]}
-    match (error["type"], error["loc"]):
-        case (
-            "extra_forbidden",
-            _,
-        ):
+def other_errors(error):
+    new_error = {"type": error["type"], "loc": error["loc"], "input": error["input"]}
+    match (error["type"]):
+        case "extra_forbidden":
             new_error[
                 "msg"
             ] = "This bib record should not contain an item record. Check the material type."
+            return new_error
+        case "missing":
+            new_error["msg"] = "Missing required field."
             return new_error
         case _:
             pass
 
 
-# def missing_field_errors(error):
-#     locs = list(error["loc"])
-#     last_loc = locs[-1]
-#     new_error = {"type": error["type"], "loc": last_loc, "input": error["input"]}
-#     if error["type"] == "missing"
-#         new_error["msg"] == "Missing required field."
-#         return new_error
-#     else:
-#             pass
-
-
 def convert_error_messages(e: ValidationError):
     errors = []
-    error_messages = []
     for error in e.errors():
         if error["type"] == "string_pattern_mismatch":
             converted_errors = string_errors(error)
-            output = f"Error identified in {converted_errors['loc']}: {converted_errors['msg']}"
             errors.append(converted_errors)
-            error_messages.append(output)
-            # return converted_errors
         elif error["type"] == "literal_error":
             converted_errors = literal_errors(error)
-            output = f"Error identified in {converted_errors['loc']}: {converted_errors['msg']}"
             errors.append(converted_errors)
-            error_messages.append(output)
-            # return converted_errors
         elif error["type"] == "extra_forbidden":
-            converted_errors = extra_field_errors(error)
-            output = f"Error identified in {converted_errors['loc']}: {converted_errors['msg']}"
+            converted_errors = other_errors(error)
             errors.append(converted_errors)
-            error_messages.append(output)
-            # return converted_errors
         elif error["type"] == "missing":
-            locs = list(error["loc"])
-            last_loc = locs[-1]
-            output = f"Error identified in {last_loc}: {error['msg']}"
-            error_messages.append(output)
-            errors.append(error)
+            converted_errors = other_errors(error)
+            errors.append(converted_errors)
         elif error["type"] == "Item/Order location check":
-            output = f"Error identified in {error['loc']}: {error['msg']}"
-            error_messages.append(output)
             errors.append(error)
         elif error["type"] == "call_no_test":
-            output = f"Error identified in {error['loc']}: {error['msg']}"
-            error_messages.append(output)
             errors.append(error)
         else:
-            # output = f"Error identified in {error['loc']}: {error['msg']}"
-            print(error)
-            pass
-    return error_messages
+            errors.append(error)
+    return errors
+
+
+def get_error_count(e: ValidationError):
+    total_errors = e.error_count()
+    return total_errors
+
+
+# def error_messages(e: ValidationError):
+#     for error in e.errors():
+#         if error["type"] == "string_pattern_mismatch":
+#             converted_errors = string_errors(error)
+#             return converted_errors
+#         elif error["type"] == "literal_error":
+#             converted_errors = literal_errors(error)
+#             return converted_errors
+#         elif error["type"] == "extra_forbidden":
+#             converted_errors = other_errors(error)
+#             return converted_errors
+#         elif error["type"] == "missing":
+#             converted_errors = other_errors(error)
+#             return converted_errors
+#         elif error["type"] == "Item/Order location check":
+#             return error
+#         elif error["type"] == "call_no_test":
+#             return error
+#         else:
+#             return error

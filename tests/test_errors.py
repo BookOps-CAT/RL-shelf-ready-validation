@@ -6,7 +6,7 @@ from src.validate.errors import (
     convert_error_messages,
     string_errors,
     literal_errors,
-    extra_field_errors,
+    other_errors,
 )
 
 
@@ -276,7 +276,7 @@ def test_extra_field_error(valid_pamphlet_record):
                 "loc": ("bib_vendor_code",),
                 "msg": "Input should be 'AUXAM' or 'EVP'",
                 "input": "EVIS",
-                "ctx": {"expected": "'AUXAM' or 'EVP'"},
+                "ctx": {"expected": "'EVP' or 'AUXAM'"},
                 "url": "https://errors.pydantic.dev/2.5/v/literal_error",
             },
             "Invalid vendor code.",
@@ -287,7 +287,7 @@ def test_extra_field_error(valid_pamphlet_record):
                 "loc": ("item", "monograph_record", "item_vendor_code"),
                 "msg": "Input should be 'AUXAM' or 'EVP'",
                 "input": "EVIS",
-                "ctx": {"expected": "'AUXAM' or 'EVP'"},
+                "ctx": {"expected": "'EVP' or 'AUXAM'"},
                 "url": "https://errors.pydantic.dev/2.5/v/literal_error",
             },
             "Invalid vendor code.",
@@ -456,7 +456,7 @@ def test_all_string_errors(input, output):
     ],
 )
 def test_extra_field_errors(extra_field_error, key, value):
-    new_error = extra_field_errors(extra_field_error)
+    new_error = other_errors(extra_field_error)
     assert new_error[key] == value
 
 
@@ -472,4 +472,4 @@ def test_literal_error_pass(string_barcode_error):
 
 def test_extra_field_error_pass(vendor_code_error):
     with nullcontext():
-        extra_field_errors(vendor_code_error)
+        other_errors(vendor_code_error)

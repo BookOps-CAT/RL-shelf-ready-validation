@@ -1,34 +1,11 @@
 import click
-from pymarc import MARCReader
 from src.validate.models import Record
-from src.validate.translate import read_marc_records
-from src.validate.errors import convert_error_messages
+from src.validate.errors import convert_error_messages, get_error_count
+from src.validate.translate import read_marc_to_dict, read_marc_records
 from pydantic import ValidationError
-
-"""
-what I want this to do:
-user types cli command and gets list of available commands
- - read records
-    - returns count of records and maybe titles or 001
- - validate records
-    - first returns count of records and titles or 001
-    - asks if records should be validated
-    - then asks if errors should be printed in cli or writen to file
-
-
- ... future options:
- - edit records
- - 
-
-cli needs to be able to take file input and specify file output
-
-"""
 
 
 @click.group()
-@click.option("-f", "--file")
-@click.option("-r", "--read", "read")
-@click.option("-rv", "--read_validate", "read_validate")
 def cli():
     pass
 
@@ -39,25 +16,50 @@ def intro():
 
 
 @click.command()
-@click.argument("input", type=click.File("rb"))
-@click.argument("output", type=click.File("wb"))
-def read_records(input):
-    record = read_marc_records(input)
-    return record
+@click.option("--file", prompt=True)
+def read_records(file):
+    records = read_marc_records(file)
+    n = 0
+    while True:
+        for record in records:
+            n += 1
+            click.echo(f"Printing record {n}")
+            click.echo(record)
+            click.pause(info="Press any key to read next record")
+        click.echo("No more records")
+        break
+
+
+@click.command()
+@click.option("--file", prompt=True)
+def read_records_to_dict(file):
+    records = read_marc_to_dict(file)
+    n = 0
+    while True:
+        for record in records:
+            n += 1
+            click.echo(f"Printing record {n}")
+            click.echo(record)
+            click.pause(info="Press any key to read next record")
+        click.echo("No more records")
+        break
 
 
 @click.command
-# option to
+@click.option("--file", prompt=True)
 def validate_records(input):
     try:
         Record(**input)
     except ValidationError as e:
         formatted_errors = convert_error_messages(e)
-        return formatted_errors
+        error_count = get_error_count(e)
+        return formatted_errors, error_count
 
 
 cli.add_command(intro)
-cli.add_command(r_w_records)
+cli.add_command(read_records)
+cli.add_command(read_records_to_dict)
+cli.add_command(validate_records)
 
 if __name__ == "__main__":
     cli()
