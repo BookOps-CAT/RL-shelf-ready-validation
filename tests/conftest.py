@@ -101,3 +101,114 @@ def extra_field_error():
         "url": "https://errors.pydantic.dev/2.5/v/extra_forbidden",
     }
     return extra_field_error
+
+
+@pytest.fixture
+def stub_record_dict():
+    stub_record_dict = {
+        "leader": "00820cam a22001935i 4500",
+        "001": ["on1381158740"],
+        "050": [
+            {
+                "ind1": " ",
+                "ind2": "4",
+                "subfields": [{"a": "DK504.73"}, {"b": ".D86 2022"}],
+            }
+        ],
+        "245": [
+            {
+                "ind1": "0",
+                "ind2": "0",
+                "subfields": [
+                    {"a": "Dunikas Laika grāmata 1812-1858 /"},
+                    {
+                        "c": "atbildīgā redaktore Anita Helviga ; sagatavotāji Agris Dzenis, Mihails Ignats, Inese Veisbuka."
+                    },
+                ],
+            }
+        ],
+        "300": [
+            {
+                "ind1": " ",
+                "ind2": " ",
+                "subfields": [
+                    {"a": "248 pages :"},
+                    {"b": "color illustrations, color maps, color photographs ;"},
+                    {"c": "31 cm"},
+                ],
+            }
+        ],
+        "600": [
+            {
+                "ind1": "1",
+                "ind2": "0",
+                "subfields": [
+                    {"a": "Mucenieks, Jānis,"},
+                    {"d": "1800-1885."},
+                    {"t": "Laika grāmata."},
+                ],
+            },
+        ],
+        "651": [
+            {
+                "ind1": " ",
+                "ind2": "0",
+                "subfields": [
+                    {"a": "Latvia"},
+                    {"x": "History"},
+                    {"y": "19th century"},
+                    {"v": "Sources."},
+                ],
+            },
+        ],
+        "852": [{"ind1": "8", "ind2": " ", "subfields": [{"h": "ReCAP 23-108996"}]}],
+        "901": [{"ind1": " ", "ind2": " ", "subfields": [{"a": "EVP"}]}],
+        "910": [{"ind1": " ", "ind2": " ", "subfields": [{"a": "RL"}]}],
+        "949": [
+            {
+                "ind1": " ",
+                "ind2": "1",
+                "subfields": [
+                    {"z": "8528"},
+                    {"p": "7.77"},
+                    {"v": "EVP"},
+                    {"h": "43"},
+                    {"a": "ReCAP 23-108996"},
+                    {"l": "rc2ma"},
+                    {"t": "55"},
+                    {"i": "33433678901234"},
+                ],
+            }
+        ],
+        "960": [
+            {
+                "ind1": " ",
+                "ind2": " ",
+                "subfields": [
+                    {"s": "8372"},
+                    {"t": "MAL"},
+                    {"u": "50108latv"},
+                    {"d": "r"},
+                    {"e": "f"},
+                    {"i": "a"},
+                    {"g": "q"},
+                ],
+            }
+        ],
+        "980": [
+            {
+                "ind1": " ",
+                "ind2": " ",
+                "subfields": [
+                    {"a": "230918"},
+                    {"b": "7700"},
+                    {"c": "672"},
+                    {"d": "000"},
+                    {"e": "8372"},
+                    {"f": "20048818"},
+                    {"g": "1"},
+                ],
+            }
+        ],
+    }
+    return stub_record_dict

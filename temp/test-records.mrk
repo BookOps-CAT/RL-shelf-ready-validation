@@ -1,37 +1,41 @@
-=LDR  01122cam a2200409 i 4500
-=001  on1383473302
+=LDR  01818cam a22004935i 4500
+=001  on1381158740
 =003  OCoLC
-=005  20230701030442.0
-=008  230427s2021\\\\lv\\\\\\\\\\\\000\p\lav\d
-=020  \\$a9789934888489
-=020  \\$a9934888483
-=035  \\$a(OCoLC)1383473302
-=040  \\$aEVIEW$beng$erda$cEVIEW$dDLC
-=042  \\$alccopycat
+=005  20230606065119.0
+=008  230605s2022\\\\lv\abo\\\b\\\\000\0\lav\d
+=010  \\$a  2022550044
+=020  \\$a9789934237706 :$c77USD
+=020  \\$a9934237709 :$c77USD
+=035  \\$a(OCoLC)1381158740
+=040  \\$aDLC$beng$erda$cDLC$dDLC
 =043  \\$ae-lv---
 =049  \\$aDLCC
-=050  \4$aPG9050.17.E55$bZ55 2021
-=100  1\$aGekišs, Nauris,$eauthor.
-=245  10$aZilsniedzēm izmargots ceļš /$cNauris Gekišs.
-=264  \1$aRīga :$bDrukātava,$c2021.
-=300  \\$a196 pages ;$c20 cm
+=050  \4$aDK504.73$b.D86 2022
+=245  00$aDunikas Laika grāmata 1812-1858 /$catbildīgā redaktore Anita Helviga ; sagatavotāji Agris Dzenis, Mihails Ignats, Inese Veisbuka.
+=246  30$aLaika grāmata 1812-1858
+=264  \1$aRucava :$bRucavas tradīciju klubs,$c2022.
+=300  \\$a248 pages :$bcolor illustrations, color maps, color photographs ;$c31 cm
 =336  \\$atext$btxt$2rdacontent
 =337  \\$aunmediated$bn$2rdamedia
 =338  \\$avolume$bnc$2rdacarrier
+=500  \\$aThe edition includes facsimile images of "Laika grahmata" (handwriting with broken letters) and a cover in modern orthography.
+=504  \\$aIncludes bibliographical references.
 =546  \\$aIn Latvian.
-=650  04$aPoetry.
-=650  \0$aBlues (Music)$vPoetry.
-=650  \0$aLyric poetry.
-=650  \0$aLatvian poetry.
-=852  8\$hReCAP 23-000001
-=900  \\$a2500567B
+=600  10$aMucenieks, Jānis,$d1800-1885.$tLaika grāmata.
+=600  10$aMucenieks, Jānis,$d1800-1885$vDiaries.
+=651  \0$aLatvia$xHistory$y19th century$vSources.
+=651  \0$aLatvia$xHistory$y1562-1918$vSources.
+=700  1\$aHelviga, Anita,$eeditor.
+=700  1\$aIgnats, Mihails,$eeditor.
+=700  1\$aVeisbuka, Inese,$eeditor.
+=700  1\$aDzenis, Agris,$eeditor.
+=852  8\$hReCAP 23-108996
+=900  \\$a2500312B
 =901  \\$aEVP
 =910  \\$aRL
-=949  \1$z8528$aReCAP 23-000001$i333331234567891$p24$vEVP$h43$lrc2ma$t55
-=949  \1$z8528$aReCAP 23-000002$i333331234567892$p24$vEVP$h43$lrc2ma$t55
-=949  \1$z8528$aReCAP 23-000003$i333331234567893$p24$vEVP$h43$lrc2ma$t55
-=960  \\$s3072$tMAL$u50108latv$dr$ef$ia$gq
-=980  \\$a230918$b2400$c672$d000$e3072$f20048818$g1
+=949  \1$z8528$p7.77$vEVP$h43$aReCAP 23-108996$lrc2ma$t55$i33433678901234
+=960  \\$s8372$tMAL$u50108latv$dr$ef$ia$gq
+=980  \\$a230918$b7700$c672$d000$e8372$f20048818$g1
 =981  \\$aEVP
 =994  \\$aC0$bDLC
 
@@ -195,7 +199,6 @@
 =981  \\$aEVP
 =994  \\$aC0$bDLC
 
-
 =LDR  02350cam a2200385 i 4500
 =001  AAL08266830-0001
 =003  Fr-PaAMA
@@ -227,6 +230,11 @@
 =949  \1$z8528$aReCAP 23-112875$i33433135521650$p18.60$vAUXAM
 =960  \\$s2321$tMAL$u48005apprv
 =980  \\$a230919$b1860$c461$e2321$f39000845$g1
+
+
+
+
+
 
 
 

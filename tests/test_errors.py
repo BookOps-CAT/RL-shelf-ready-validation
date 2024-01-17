@@ -7,7 +7,17 @@ from src.validate.errors import (
     string_errors,
     literal_errors,
     other_errors,
+    get_error_count,
 )
+
+
+def test_error_count(valid_nypl_rl_record):
+    valid_nypl_rl_record["item"]["item_barcode"] = "12345678901234"
+    try:
+        Record(**valid_nypl_rl_record)
+    except ValidationError as e:
+        error_count = get_error_count(e)
+        assert error_count == 1
 
 
 def test_string_error_types(valid_nypl_rl_record):
@@ -16,7 +26,7 @@ def test_string_error_types(valid_nypl_rl_record):
         Record(**valid_nypl_rl_record)
     except ValidationError as e:
         error = convert_error_messages(e)
-        assert error["type"] == "string_pattern_mismatch"
+        assert error[0]["type"] == "string_pattern_mismatch"
 
 
 def test_extra_field_types(valid_pamphlet_record):
@@ -25,7 +35,7 @@ def test_extra_field_types(valid_pamphlet_record):
         Record(**valid_pamphlet_record)
     except ValidationError as e:
         error = convert_error_messages(e)
-        assert error["type"] == "extra_forbidden"
+        assert error[0]["type"] == "extra_forbidden"
 
 
 def test_literal_error_types(valid_nypl_rl_record):
@@ -34,7 +44,7 @@ def test_literal_error_types(valid_nypl_rl_record):
         Record(**valid_nypl_rl_record)
     except ValidationError as e:
         error = convert_error_messages(e)
-        assert error["type"] == "literal_error"
+        assert error[0]["type"] == "literal_error"
 
 
 def test_missing_types(valid_nypl_rl_record):
@@ -43,7 +53,34 @@ def test_missing_types(valid_nypl_rl_record):
         Record(**valid_nypl_rl_record)
     except ValidationError as e:
         error = convert_error_messages(e)
-        assert error["type"] == "missing"
+        assert error[0]["type"] == "missing"
+
+
+def test_location_check_type(valid_nypl_rl_record):
+    valid_nypl_rl_record["item"]["item_type"] = "55"
+    try:
+        Record(**valid_nypl_rl_record)
+    except ValidationError as e:
+        error = convert_error_messages(e)
+        assert error[0]["type"] == "Item/Order location check"
+
+
+def test_call_no_test_type(valid_pamphlet_record):
+    valid_pamphlet_record["bib_call_no"] = "ReCAP 23-111111"
+    try:
+        Record(**valid_pamphlet_record)
+    except ValidationError as e:
+        error = convert_error_messages(e)
+        assert error[0]["type"] == "Call Number test"
+
+
+def test_other_type(valid_nypl_rl_record):
+    valid_nypl_rl_record["item"]["item_type"] = 2
+    try:
+        Record(**valid_nypl_rl_record)
+    except ValidationError as e:
+        error = convert_error_messages(e)
+        assert len(error) == 1
 
 
 @pytest.mark.parametrize(
@@ -59,10 +96,10 @@ def test_bib_call_no_error(valid_nypl_rl_record, key, value):
         Record(**valid_nypl_rl_record)
         new_error = convert_error_messages(e)
         assert (
-            new_error["msg"]
+            new_error[0]["msg"]
             == "ReCAP call numbers should contain a 2-digit year and match the pattern 'ReCAP YY-999999'."
         )
-        assert new_error["loc"] == key
+        assert new_error[0]["loc"] == key
 
 
 @pytest.mark.parametrize(
@@ -78,10 +115,10 @@ def test_item_call_no_error(valid_nypl_rl_record, key, value):
         Record(**valid_nypl_rl_record)
         new_error = convert_error_messages(e)
         assert (
-            new_error["msg"]
+            new_error[0]["msg"]
             == "ReCAP call numbers should contain a 2-digit year and match the pattern 'ReCAP YY-999999'."
         )
-        assert new_error["loc"] == key
+        assert new_error[0]["loc"] == key
 
 
 @pytest.mark.parametrize(
@@ -98,8 +135,10 @@ def test_invoice_price_error(valid_nypl_rl_record, key, value):
     with pytest.raises(ValidationError) as e:
         Record(**valid_nypl_rl_record)
         new_error = convert_error_messages(e)
-        assert new_error["msg"] == "Invoice prices should not include decimal points."
-        assert new_error["loc"] == key
+        assert (
+            new_error[0]["msg"] == "Invoice prices should not include decimal points."
+        )
+        assert new_error[0]["loc"] == key
 
 
 @pytest.mark.parametrize(
@@ -114,8 +153,8 @@ def test_order_price_error(valid_nypl_rl_record, key, value):
     with pytest.raises(ValidationError) as e:
         Record(**valid_nypl_rl_record)
         new_error = convert_error_messages(e)
-        assert new_error["msg"] == "Order prices should not include decimal points."
-        assert new_error["loc"] == ("order_price")
+        assert new_error[0]["msg"] == "Order prices should not include decimal points."
+        assert new_error[0]["loc"] == ("order_price")
 
 
 @pytest.mark.parametrize(
@@ -131,8 +170,8 @@ def test_invoice_date_error(valid_nypl_rl_record, key, value):
     with pytest.raises(ValidationError) as e:
         Record(**valid_nypl_rl_record)
         new_error = convert_error_messages(e)
-        assert new_error["msg"] == "Invoice dates should match the pattern YYMMDD."
-        assert new_error["loc"] == ("invoice_date")
+        assert new_error[0]["msg"] == "Invoice dates should match the pattern YYMMDD."
+        assert new_error[0]["loc"] == ("invoice_date")
 
 
 @pytest.mark.parametrize(
@@ -149,8 +188,8 @@ def test_item_price_error(valid_nypl_rl_record, key, value):
     with pytest.raises(ValidationError) as e:
         Record(**valid_nypl_rl_record)
         new_error = convert_error_messages(e)
-        assert new_error["msg"] == "Item prices must include decimal points."
-        assert new_error["loc"] == ("item_price")
+        assert new_error[0]["msg"] == "Item prices must include decimal points."
+        assert new_error[0]["loc"] == ("item_price")
 
 
 @pytest.mark.parametrize(
@@ -167,8 +206,8 @@ def test_message_error(valid_nypl_rl_record, key, value):
     with pytest.raises(ValidationError) as e:
         Record(**valid_nypl_rl_record)
         new_error = convert_error_messages(e)
-        assert new_error["msg"] == "Messages in item records should be all caps."
-        assert new_error["loc"] == key
+        assert new_error[0]["msg"] == "Messages in item records should be all caps."
+        assert new_error[0]["loc"] == key
 
 
 @pytest.mark.parametrize(
@@ -183,8 +222,8 @@ def test_item_vendor_code_error(valid_nypl_rl_record, key, value):
     with pytest.raises(ValidationError) as e:
         Record(**valid_nypl_rl_record)
         new_error = convert_error_messages(e)
-        assert new_error["msg"] == "Invalid vendor code."
-        assert new_error["loc"] == key
+        assert new_error[0]["msg"] == "Invalid vendor code."
+        assert new_error[0]["loc"] == key
 
 
 @pytest.mark.parametrize(
@@ -199,8 +238,8 @@ def test_bib_vendor_code_error(valid_nypl_rl_record, key, value):
     with pytest.raises(ValidationError) as e:
         Record(**valid_nypl_rl_record)
         new_error = convert_error_messages(e)
-        assert new_error["msg"] == "Invalid vendor code."
-        assert new_error["loc"] == key
+        assert new_error[0]["msg"] == "Invalid vendor code."
+        assert new_error[0]["loc"] == key
 
 
 @pytest.mark.parametrize(
@@ -212,8 +251,8 @@ def test_RL_identifier_error(valid_nypl_rl_record, value):
     with pytest.raises(ValidationError) as e:
         Record(**valid_nypl_rl_record)
         new_error = convert_error_messages(e)
-        assert new_error["msg"] == "Invalid research libraries identifier."
-        assert new_error["loc"] == "rl_identifier"
+        assert new_error[0]["msg"] == "Invalid research libraries identifier."
+        assert new_error[0]["loc"] == "rl_identifier"
 
 
 @pytest.mark.parametrize(
@@ -225,8 +264,8 @@ def test_call_tag_error(valid_nypl_rl_record, value):
     with pytest.raises(ValidationError) as e:
         Record(**valid_nypl_rl_record)
         new_error = convert_error_messages(e)
-        assert new_error["msg"] == "Invalid item call tag. Should be '8528'."
-        assert new_error["loc"] == "item_call_tag"
+        assert new_error[0]["msg"] == "Invalid item call tag. Should be '8528'."
+        assert new_error[0]["loc"] == "item_call_tag"
 
 
 @pytest.mark.parametrize(
@@ -238,8 +277,8 @@ def test_item_location_error(valid_nypl_rl_record, value):
     with pytest.raises(ValidationError) as e:
         Record(**valid_nypl_rl_record)
         new_error = convert_error_messages(e)
-        assert new_error["msg"] == "Item location does not match a valid location."
-        assert new_error["loc"] == "item_location"
+        assert new_error[0]["msg"] == "Item location does not match a valid location."
+        assert new_error[0]["loc"] == "item_location"
 
 
 @pytest.mark.parametrize(
@@ -251,8 +290,8 @@ def test_order_location_error(valid_nypl_rl_record, value):
     with pytest.raises(ValidationError) as e:
         Record(**valid_nypl_rl_record)
         new_error = convert_error_messages(e)
-        assert new_error["msg"] == "Order location does not match a valid location."
-        assert new_error["loc"] == "order_location"
+        assert new_error[0]["msg"] == "Order location does not match a valid location."
+        assert new_error[0]["loc"] == "order_location"
 
 
 def test_extra_field_error(valid_pamphlet_record):
@@ -261,10 +300,10 @@ def test_extra_field_error(valid_pamphlet_record):
         Record(**valid_pamphlet_record)
         new_error = convert_error_messages(e)
         assert (
-            new_error["msg"]
+            new_error[0]["msg"]
             == "This bib record should not contain an item record. Check the material type."
         )
-        assert new_error["type"] == "extra_forbidden"
+        assert new_error[0]["type"] == "extra_forbidden"
 
 
 @pytest.mark.parametrize(
@@ -452,7 +491,7 @@ def test_all_string_errors(input, output):
             "msg",
             "This bib record should not contain an item record. Check the material type.",
         ),
-        ("loc", "item_vendor_code"),
+        ("loc", ("item", "pamphlet", "item_vendor_code")),
     ],
 )
 def test_extra_field_errors(extra_field_error, key, value):

@@ -143,32 +143,10 @@ def convert_error_messages(e: ValidationError):
         elif error["type"] == "call_no_test":
             errors.append(error)
         else:
-            errors.append(error)
+            pass
     return errors
 
 
 def get_error_count(e: ValidationError):
     total_errors = e.error_count()
     return total_errors
-
-
-# def error_messages(e: ValidationError):
-#     for error in e.errors():
-#         if error["type"] == "string_pattern_mismatch":
-#             converted_errors = string_errors(error)
-#             return converted_errors
-#         elif error["type"] == "literal_error":
-#             converted_errors = literal_errors(error)
-#             return converted_errors
-#         elif error["type"] == "extra_forbidden":
-#             converted_errors = other_errors(error)
-#             return converted_errors
-#         elif error["type"] == "missing":
-#             converted_errors = other_errors(error)
-#             return converted_errors
-#         elif error["type"] == "Item/Order location check":
-#             return error
-#         elif error["type"] == "call_no_test":
-#             return error
-#         else:
-#             return error

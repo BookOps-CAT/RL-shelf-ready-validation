@@ -5,7 +5,7 @@ from pydantic import (
     model_validator,
     ValidationError,
 )
-from typing import Literal, Optional, Annotated, Union
+from typing import Literal, Optional, Annotated, Union, List
 from pydantic_core import InitErrorDetails, PydanticCustomError
 
 
@@ -84,7 +84,6 @@ class ItemNotRequired(BaseModel):
         "catalogue_raissonne",
         "performing_arts_dance",
         "multipart",
-        "incomplete_set",
         "pamphlet",
         "non-standard_binding_packaging",
     ]
@@ -132,8 +131,12 @@ class Record(BaseModel):
     item: Union[ItemRequired, ItemNotRequired] = Field(
         ..., discriminator="material_type"
     )
+    # item: List[ItemRequired]
     order: Order
     invoice: Invoice
+
+    # @model_validator(mode="before")
+    # def items_list_to_dict(self) -> "Record":
 
     @model_validator(mode="wrap")
     def match_locations(self, handler) -> "Record":
@@ -231,7 +234,7 @@ class Record(BaseModel):
                     )
                 )
             case (
-                "catalog_raissonne"
+                "catalogue_raissonne"
                 | "performing_arts_dance"
                 | "multipart"
                 | "incomplete_set"
@@ -278,7 +281,7 @@ class Record(BaseModel):
         material_type = self.item.material_type
         match (material_type, bib_call_no):
             case (
-                "catalog_raissonne"
+                "catalogue_raissonne"
                 | "performing_arts_dance"
                 | "multipart"
                 | "incomplete_set"
@@ -287,11 +290,30 @@ class Record(BaseModel):
                 None,
             ):
                 pass
+            case (
+                "catalogue_raissonne"
+                | "performing_arts_dance"
+                | "multipart"
+                | "incomplete_set"
+                | "pamphlet"
+                | "non-standard_binding_packaging",
+                _,
+            ):
+                validation_errors.append(
+                    InitErrorDetails(
+                        type=PydanticCustomError(
+                            "Call Number test",
+                            "Records for this item type should not have a call number.",
+                        ),
+                        loc=("material_type", "bib_call_no"),
+                        input=(self),
+                    )
+                )
             case _:
                 validation_errors.append(
                     InitErrorDetails(
                         type=PydanticCustomError(
-                            "call_no_test",
+                            "Call Number test",
                             "something is wrong with call_no/material_type combination",
                         ),
                         loc=("material_type", "bib_call_no"),
