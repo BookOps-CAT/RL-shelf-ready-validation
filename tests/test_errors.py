@@ -1,9 +1,9 @@
 import pytest
 from pydantic import ValidationError
-from contextlib import nullcontext
+from contextlib import nullcontext as does_not_raise
 from src.validate.models import Record
 from src.validate.errors import (
-    convert_error_messages,
+    format_error_messages,
     string_errors,
     literal_errors,
     other_errors,
@@ -25,8 +25,8 @@ def test_string_error_types(valid_nypl_rl_record):
     try:
         Record(**valid_nypl_rl_record)
     except ValidationError as e:
-        error = convert_error_messages(e)
-        assert error[0]["type"] == "string_pattern_mismatch"
+        error = format_error_messages(e)
+        assert error[0] == ("Invalid barcode", "12345678901234")
 
 
 def test_extra_field_types(valid_pamphlet_record):
@@ -34,8 +34,8 @@ def test_extra_field_types(valid_pamphlet_record):
     try:
         Record(**valid_pamphlet_record)
     except ValidationError as e:
-        error = convert_error_messages(e)
-        assert error[0]["type"] == "extra_forbidden"
+        error = format_error_messages(e)
+        assert error[0] == ("1 extra field(s)", ["item_call_tag"])
 
 
 def test_literal_error_types(valid_nypl_rl_record):
@@ -43,8 +43,8 @@ def test_literal_error_types(valid_nypl_rl_record):
     try:
         Record(**valid_nypl_rl_record)
     except ValidationError as e:
-        error = convert_error_messages(e)
-        assert error[0]["type"] == "literal_error"
+        error = format_error_messages(e)
+        assert error[0] == ("Invalid item call tag", "8582")
 
 
 def test_missing_types(valid_nypl_rl_record):
@@ -52,8 +52,8 @@ def test_missing_types(valid_nypl_rl_record):
     try:
         Record(**valid_nypl_rl_record)
     except ValidationError as e:
-        error = convert_error_messages(e)
-        assert error[0]["type"] == "missing"
+        error = format_error_messages(e)
+        assert error[0] == ("1 missing field(s)", ["item_call_tag"])
 
 
 def test_location_check_type(valid_nypl_rl_record):
@@ -61,8 +61,11 @@ def test_location_check_type(valid_nypl_rl_record):
     try:
         Record(**valid_nypl_rl_record)
     except ValidationError as e:
-        error = convert_error_messages(e)
-        assert error[0]["type"] == "Item/Order location check"
+        error = format_error_messages(e)
+        assert error[0] == (
+            "item_location/item_type/order_location combination is not valid.",
+            ("rcmb2", "55", "MAB"),
+        )
 
 
 def test_call_no_test_type(valid_pamphlet_record):
@@ -70,55 +73,35 @@ def test_call_no_test_type(valid_pamphlet_record):
     try:
         Record(**valid_pamphlet_record)
     except ValidationError as e:
-        error = convert_error_messages(e)
-        assert error[0]["type"] == "Call Number test"
-
-
-def test_other_type(valid_nypl_rl_record):
-    valid_nypl_rl_record["item"]["item_type"] = 2
-    try:
-        Record(**valid_nypl_rl_record)
-    except ValidationError as e:
-        error = convert_error_messages(e)
-        assert len(error) == 1
+        error = format_error_messages(e)
+        assert error[0] == (
+            "Record should not have a call_no. Check item type.",
+            "ReCAP 23-111111",
+        )
 
 
 @pytest.mark.parametrize(
-    "key, value",
-    [
-        ("bib_call_no", "RECAP 23-00000"),
-        ("bib_call_no", "ReCAP 11-11111"),
-    ],
+    "value",
+    ["RECAP 23-00000", "ReCAP 11-11111"],
 )
-def test_bib_call_no_error(valid_nypl_rl_record, key, value):
-    valid_nypl_rl_record[key] = value
+def test_bib_call_no_error(valid_nypl_rl_record, value):
+    valid_nypl_rl_record["bib_call_no"] = value
     with pytest.raises(ValidationError) as e:
         Record(**valid_nypl_rl_record)
-        new_error = convert_error_messages(e)
-        assert (
-            new_error[0]["msg"]
-            == "ReCAP call numbers should contain a 2-digit year and match the pattern 'ReCAP YY-999999'."
-        )
-        assert new_error[0]["loc"] == key
+        new_error = format_error_messages(e)
+        assert new_error[0] == ("Invalid ReCAP call number", value)
 
 
 @pytest.mark.parametrize(
-    "key, value",
-    [
-        ("item_call_no", "ReCAP 24-0000"),
-        ("item_call_no", "ReCAP 11-11111"),
-    ],
+    "value",
+    ["ReCAP 24-0000", "ReCAP 11-11111"],
 )
-def test_item_call_no_error(valid_nypl_rl_record, key, value):
-    valid_nypl_rl_record["item"][key] = value
+def test_item_call_no_error(valid_nypl_rl_record, value):
+    valid_nypl_rl_record["item"]["item_call_no"] = value
     with pytest.raises(ValidationError) as e:
         Record(**valid_nypl_rl_record)
-        new_error = convert_error_messages(e)
-        assert (
-            new_error[0]["msg"]
-            == "ReCAP call numbers should contain a 2-digit year and match the pattern 'ReCAP YY-999999'."
-        )
-        assert new_error[0]["loc"] == key
+        new_error = format_error_messages(e)
+        assert new_error[0] == ("Invalid ReCAP call number", value)
 
 
 @pytest.mark.parametrize(
@@ -134,62 +117,53 @@ def test_invoice_price_error(valid_nypl_rl_record, key, value):
     valid_nypl_rl_record["invoice"][key] = value
     with pytest.raises(ValidationError) as e:
         Record(**valid_nypl_rl_record)
-        new_error = convert_error_messages(e)
-        assert (
-            new_error[0]["msg"] == "Invoice prices should not include decimal points."
+        new_error = format_error_messages(e)
+        assert new_error[0] == (
+            "Invalid price; Invoice price should not include a decimal point",
+            value,
         )
-        assert new_error[0]["loc"] == key
 
 
 @pytest.mark.parametrize(
-    "key, value",
-    [
-        ("order_price", "2.00"),
-        ("order_price", "1.11"),
-    ],
+    "value",
+    ["2.00", "order_price", "1.11"],
 )
-def test_order_price_error(valid_nypl_rl_record, key, value):
-    valid_nypl_rl_record["order"][key] = value
+def test_order_price_error(valid_nypl_rl_record, value):
+    valid_nypl_rl_record["order"]["order_price"] = value
     with pytest.raises(ValidationError) as e:
         Record(**valid_nypl_rl_record)
-        new_error = convert_error_messages(e)
-        assert new_error[0]["msg"] == "Order prices should not include decimal points."
-        assert new_error[0]["loc"] == ("order_price")
+        new_error = format_error_messages(e)
+        assert new_error[0] == (
+            "Invalid price; Order price should not include a decimal point",
+            value,
+        )
 
 
 @pytest.mark.parametrize(
-    "key, value",
-    [
-        ("invoice_date", "20240101"),
-        ("invoice_date", "01012024"),
-        ("invoice_date", "January 1, 2024"),
-    ],
+    "value",
+    ["20240101", "01012024", "January 1, 2024"],
 )
-def test_invoice_date_error(valid_nypl_rl_record, key, value):
-    valid_nypl_rl_record["invoice"][key] = value
+def test_invoice_date_error(valid_nypl_rl_record, value):
+    valid_nypl_rl_record["invoice"]["invoice_date"] = value
     with pytest.raises(ValidationError) as e:
         Record(**valid_nypl_rl_record)
-        new_error = convert_error_messages(e)
-        assert new_error[0]["msg"] == "Invoice dates should match the pattern YYMMDD."
-        assert new_error[0]["loc"] == ("invoice_date")
+        new_error = format_error_messages(e)
+        assert new_error[0] == ("Invalid date; invoice date should be YYMMDD", value)
 
 
 @pytest.mark.parametrize(
-    "key, value",
-    [
-        ("item_price", "100"),
-        ("item_price", "1"),
-        ("item_price", "10"),
-        ("item_price", "222"),
-    ],
+    "value",
+    ["100", "1", "10", "222"],
 )
-def test_item_price_error(valid_nypl_rl_record, key, value):
-    valid_nypl_rl_record["item"][key] = value
+def test_item_price_error(valid_nypl_rl_record, value):
+    valid_nypl_rl_record["item"]["item_price"] = value
     with pytest.raises(ValidationError) as e:
         Record(**valid_nypl_rl_record)
-        new_error = convert_error_messages(e)
-        assert new_error[0]["msg"] == "Item prices must include decimal points."
-        assert new_error[0]["loc"] == ("item_price")
+        new_error = format_error_messages(e)
+        assert new_error[0] == (
+            "Invalid price; item price should include a decimal point",
+            value,
+        )
 
 
 @pytest.mark.parametrize(
@@ -205,41 +179,35 @@ def test_message_error(valid_nypl_rl_record, key, value):
     valid_nypl_rl_record["item"][key] = value
     with pytest.raises(ValidationError) as e:
         Record(**valid_nypl_rl_record)
-        new_error = convert_error_messages(e)
-        assert new_error[0]["msg"] == "Messages in item records should be all caps."
-        assert new_error[0]["loc"] == key
+        new_error = format_error_messages(e)
+        assert new_error[0] == (
+            "Invalid item message; message should be in all caps",
+            value,
+        )
 
 
 @pytest.mark.parametrize(
-    "key, value",
-    [
-        ("item_vendor_code", "AUX"),
-        ("item_vendor_code", "EV"),
-    ],
+    "value",
+    ["AUX", "EV"],
 )
-def test_item_vendor_code_error(valid_nypl_rl_record, key, value):
-    valid_nypl_rl_record["item"][key] = value
+def test_item_vendor_code_error(valid_nypl_rl_record, value):
+    valid_nypl_rl_record["item"]["item_vendor_code"] = value
     with pytest.raises(ValidationError) as e:
         Record(**valid_nypl_rl_record)
-        new_error = convert_error_messages(e)
-        assert new_error[0]["msg"] == "Invalid vendor code."
-        assert new_error[0]["loc"] == key
+        new_error = format_error_messages(e)
+        assert new_error[0] == ("Invalid vendor code", value)
 
 
 @pytest.mark.parametrize(
-    "key, value",
-    [
-        ("bib_vendor_code", "EVIS"),
-        ("bib_vendor_code", "Amalivre"),
-    ],
+    "value",
+    ["EVIS", "Amalivre"],
 )
-def test_bib_vendor_code_error(valid_nypl_rl_record, key, value):
-    valid_nypl_rl_record[key] = value
+def test_bib_vendor_code_error(valid_nypl_rl_record, value):
+    valid_nypl_rl_record["bib_vendor_code"] = value
     with pytest.raises(ValidationError) as e:
         Record(**valid_nypl_rl_record)
-        new_error = convert_error_messages(e)
-        assert new_error[0]["msg"] == "Invalid vendor code."
-        assert new_error[0]["loc"] == key
+        new_error = format_error_messages(e)
+        assert new_error[0] == ("Invalid vendor code", value)
 
 
 @pytest.mark.parametrize(
@@ -250,9 +218,8 @@ def test_RL_identifier_error(valid_nypl_rl_record, value):
     valid_nypl_rl_record["rl_identifier"] = value
     with pytest.raises(ValidationError) as e:
         Record(**valid_nypl_rl_record)
-        new_error = convert_error_messages(e)
-        assert new_error[0]["msg"] == "Invalid research libraries identifier."
-        assert new_error[0]["loc"] == "rl_identifier"
+        new_error = format_error_messages(e)
+        assert new_error[0] == ("Invalid research libraries identifier", value)
 
 
 @pytest.mark.parametrize(
@@ -263,9 +230,8 @@ def test_call_tag_error(valid_nypl_rl_record, value):
     valid_nypl_rl_record["item"]["item_call_tag"] = value
     with pytest.raises(ValidationError) as e:
         Record(**valid_nypl_rl_record)
-        new_error = convert_error_messages(e)
-        assert new_error[0]["msg"] == "Invalid item call tag. Should be '8528'."
-        assert new_error[0]["loc"] == "item_call_tag"
+        new_error = format_error_messages(e)
+        assert new_error[0] == ("Invalid item call tag", value)
 
 
 @pytest.mark.parametrize(
@@ -276,9 +242,8 @@ def test_item_location_error(valid_nypl_rl_record, value):
     valid_nypl_rl_record["item"]["item_location"] = value
     with pytest.raises(ValidationError) as e:
         Record(**valid_nypl_rl_record)
-        new_error = convert_error_messages(e)
-        assert new_error[0]["msg"] == "Item location does not match a valid location."
-        assert new_error[0]["loc"] == "item_location"
+        new_error = format_error_messages(e)
+        assert new_error[0] == ("Item location does not match a valid location", value)
 
 
 @pytest.mark.parametrize(
@@ -289,21 +254,16 @@ def test_order_location_error(valid_nypl_rl_record, value):
     valid_nypl_rl_record["order"]["order_location"] = value
     with pytest.raises(ValidationError) as e:
         Record(**valid_nypl_rl_record)
-        new_error = convert_error_messages(e)
-        assert new_error[0]["msg"] == "Order location does not match a valid location."
-        assert new_error[0]["loc"] == "order_location"
+        new_error = format_error_messages(e)
+        assert new_error[0] == ("Order location does not match a valid location", value)
 
 
 def test_extra_field_error(valid_pamphlet_record):
     valid_pamphlet_record["item"]["item_call_tag"] = "8528"
     with pytest.raises(ValidationError) as e:
         Record(**valid_pamphlet_record)
-        new_error = convert_error_messages(e)
-        assert (
-            new_error[0]["msg"]
-            == "This bib record should not contain an item record. Check the material type."
-        )
-        assert new_error[0]["type"] == "extra_forbidden"
+        new_error = format_error_messages(e)
+        assert new_error[0] == ("1 extra field(s)", "item_call_tag")
 
 
 @pytest.mark.parametrize(
@@ -318,7 +278,7 @@ def test_extra_field_error(valid_pamphlet_record):
                 "ctx": {"expected": "'EVP' or 'AUXAM'"},
                 "url": "https://errors.pydantic.dev/2.5/v/literal_error",
             },
-            "Invalid vendor code.",
+            "Invalid vendor code",
         ),
         (
             {
@@ -329,7 +289,7 @@ def test_extra_field_error(valid_pamphlet_record):
                 "ctx": {"expected": "'EVP' or 'AUXAM'"},
                 "url": "https://errors.pydantic.dev/2.5/v/literal_error",
             },
-            "Invalid vendor code.",
+            "Invalid vendor code",
         ),
         (
             {
@@ -340,7 +300,7 @@ def test_extra_field_error(valid_pamphlet_record):
                 "ctx": {"expected": "'RL'"},
                 "url": "https://errors.pydantic.dev/2.5/v/literal_error",
             },
-            "Invalid research libraries identifier.",
+            "Invalid research libraries identifier",
         ),
         (
             {
@@ -351,7 +311,7 @@ def test_extra_field_error(valid_pamphlet_record):
                 "ctx": {"expected": "'8528'"},
                 "url": "https://errors.pydantic.dev/2.5/v/literal_error",
             },
-            "Invalid item call tag. Should be '8528'.",
+            "Invalid item call tag",
         ),
         (
             {
@@ -364,7 +324,7 @@ def test_extra_field_error(valid_pamphlet_record):
                 },
                 "url": "https://errors.pydantic.dev/2.5/v/literal_error",
             },
-            "Item location does not match a valid location.",
+            "Item location does not match a valid location",
         ),
         (
             {
@@ -377,7 +337,7 @@ def test_extra_field_error(valid_pamphlet_record):
                 },
                 "url": "https://errors.pydantic.dev/2.5/v/literal_error",
             },
-            "Order location does not match a valid location.",
+            "Order location does not match a valid location",
         ),
     ],
 )
@@ -398,7 +358,7 @@ def test_all_literal_errors(input, output):
                 "ctx": {"pattern": "^33433[0-9]{9}$|^33333[0-9]{9}$|^34444[0-9]{9}$"},
                 "url": "https://errors.pydantic.dev/2.5/v/string_pattern_mismatch",
             },
-            "Invalid barcode. Barcodes should be 14 digits long and begin with: '33433' for NYPL Research Libraries, '33333' for NYPL Branch Libraries, or '34444' for BPL.",
+            "Invalid barcode",
         ),
         (
             {
@@ -409,7 +369,7 @@ def test_all_literal_errors(input, output):
                 "ctx": {"pattern": "^ReCAP 23-\\d{6}$|^ReCAP 24-\\d{6}$"},
                 "url": "https://errors.pydantic.dev/2.5/v/string_pattern_mismatch",
             },
-            "ReCAP call numbers should contain a 2-digit year and match the pattern 'ReCAP YY-999999'.",
+            "Invalid ReCAP call number",
         ),
         (
             {
@@ -420,7 +380,7 @@ def test_all_literal_errors(input, output):
                 "ctx": {"pattern": "^ReCAP 23-\\d{6}$|^ReCAP 24-\\d{6}$"},
                 "url": "https://errors.pydantic.dev/2.5/v/string_pattern_mismatch",
             },
-            "ReCAP call numbers should contain a 2-digit year and match the pattern 'ReCAP YY-999999'.",
+            "Invalid ReCAP call number",
         ),
         (
             {
@@ -431,7 +391,7 @@ def test_all_literal_errors(input, output):
                 "ctx": {"pattern": "^\\d{3,}$"},
                 "url": "https://errors.pydantic.dev/2.5/v/string_pattern_mismatch",
             },
-            "Invoice prices should not include decimal points.",
+            "Invalid price; Invoice price should not include a decimal point",
         ),
         (
             {
@@ -442,7 +402,7 @@ def test_all_literal_errors(input, output):
                 "ctx": {"pattern": "^\\d{3,}$"},
                 "url": "https://errors.pydantic.dev/2.5/v/string_pattern_mismatch",
             },
-            "Order prices should not include decimal points.",
+            "Invalid price; Order price should not include a decimal point",
         ),
         (
             {
@@ -453,7 +413,7 @@ def test_all_literal_errors(input, output):
                 "ctx": {"pattern": "^\\d{6}$"},
                 "url": "https://errors.pydantic.dev/2.5/v/string_pattern_mismatch",
             },
-            "Invoice dates should match the pattern YYMMDD.",
+            "Invalid date; invoice date should be YYMMDD",
         ),
         (
             {
@@ -464,7 +424,7 @@ def test_all_literal_errors(input, output):
                 "ctx": {"pattern": "^\\d{1,}\\.\\d{2}$"},
                 "url": "https://errors.pydantic.dev/2.5/v/string_pattern_mismatch",
             },
-            "Item prices must include decimal points.",
+            "Invalid price; item price should include a decimal point",
         ),
         (
             {
@@ -475,7 +435,7 @@ def test_all_literal_errors(input, output):
                 "ctx": {"pattern": "^[^a-z]+"},
                 "url": "https://errors.pydantic.dev/2.5/v/string_pattern_mismatch",
             },
-            "Messages in item records should be all caps.",
+            "Invalid item message; message should be in all caps",
         ),
     ],
 )
@@ -484,31 +444,16 @@ def test_all_string_errors(input, output):
     assert new_error["msg"] == output
 
 
-@pytest.mark.parametrize(
-    "key, value",
-    [
-        (
-            "msg",
-            "This bib record should not contain an item record. Check the material type.",
-        ),
-        ("loc", ("item", "pamphlet", "item_vendor_code")),
-    ],
-)
-def test_extra_field_errors(extra_field_error, key, value):
-    new_error = other_errors(extra_field_error)
-    assert new_error[key] == value
-
-
 def test_string_error_pass(vendor_code_error):
-    with nullcontext():
+    with does_not_raise():
         string_errors(vendor_code_error)
 
 
 def test_literal_error_pass(string_barcode_error):
-    with nullcontext():
+    with does_not_raise():
         literal_errors(string_barcode_error)
 
 
 def test_extra_field_error_pass(vendor_code_error):
-    with nullcontext():
+    with does_not_raise():
         other_errors(vendor_code_error)

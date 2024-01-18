@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "rl-sr-validation"
+name = "src"
 version = "0.1.0"
 description = ""
 authors = ["Charlotte Kostelic <charlottekostelic@gmail.com>"]
@@ -7,10 +7,6 @@ readme = "README.md"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-
-[tool.setuptools.project.scripts]
-cli = "src:cli"
-run = "src"
 
 [tool.poetry.dependencies]
 python = "^3.10"
