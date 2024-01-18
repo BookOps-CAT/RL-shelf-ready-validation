@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 from contextlib import nullcontext
-from rl_sr_validation.models import Order
+from src.validate.models import Order
 
 
 @pytest.mark.parametrize("order_price", ["123", "1234", "12345"])

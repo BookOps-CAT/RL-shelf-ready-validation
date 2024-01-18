@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 from contextlib import nullcontext
-from rl_sr_validation.models import Invoice
+from src.validate.models import Invoice
 
 
 @pytest.mark.parametrize("invoice_date", ["230101", "240101", "220202"])

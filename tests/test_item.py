@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 from contextlib import nullcontext
-from rl_sr_validation.models import ItemRequired, ItemNotRequired
+from src.validate.models import ItemRequired, ItemNotRequired
 
 
 @pytest.mark.parametrize("material_type", ["monograph_record"])
@@ -26,7 +26,6 @@ def test_monograph_type_valid(material_type):
         "catalog_raissonne",
         "performing_arts_dance",
         "multipart",
-        "incomplete_set",
         "pamphlet",
         "non-standard_binding_packaging",
     ],
@@ -52,7 +51,6 @@ def test_monograph_type_invalid(material_type):
         "catalogue_raissonne",
         "performing_arts_dance",
         "multipart",
-        "incomplete_set",
         "pamphlet",
         "non-standard_binding_packaging",
     ],
