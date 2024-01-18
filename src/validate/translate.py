@@ -58,6 +58,7 @@ def get_subfield(subfield_list, s):
 
 
 def get_material_type(record: dict) -> str:
+    # return material type
     physical_desc = get_nested_subfield(record, "300", "a")
     split_physical_desc = physical_desc.split()
     subject_dict = {

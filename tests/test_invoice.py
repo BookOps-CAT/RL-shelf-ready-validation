@@ -1,12 +1,12 @@
 import pytest
 from pydantic import ValidationError
-from contextlib import nullcontext
+from contextlib import nullcontext as does_not_raise
 from src.validate.models import Invoice
 
 
 @pytest.mark.parametrize("invoice_date", ["230101", "240101", "220202"])
 def test_invoice_date_valid(invoice_date):
-    with nullcontext():
+    with does_not_raise():
         Invoice(
             invoice_date=invoice_date,
             invoice_price="123",
@@ -20,10 +20,10 @@ def test_invoice_date_valid(invoice_date):
 
 @pytest.mark.parametrize(
     "invoice_date",
-    [1.00, 12, None, [231001, "October 1, 2023", {"date": "231001"}]],
+    ["October 1, 2023", "20231001", "2023-01-01"],
 )
 def test_invoice_date_invalid(invoice_date):
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError) as e:
         Invoice(
             invoice_date=invoice_date,
             invoice_price="123",
@@ -33,11 +33,12 @@ def test_invoice_date_invalid(invoice_date):
             invoice_number="12345",
             invoice_copies="1",
         )
+    assert e.value.errors()[0]["type"] == "string_pattern_mismatch"
 
 
 @pytest.mark.parametrize("invoice_price", ["123", "1234", "222222"])
 def test_invoice_price_valid(invoice_price):
-    with nullcontext():
+    with does_not_raise():
         Invoice(
             invoice_date="230101",
             invoice_price=invoice_price,
@@ -50,11 +51,17 @@ def test_invoice_price_valid(invoice_price):
 
 
 @pytest.mark.parametrize(
-    "invoice_price",
-    [1.00, 12, None, [123, 123.45]],
+    "invoice_price, error_type",
+    [
+        (1.00, "string_type"),
+        (12, "string_type"),
+        (None, "string_type"),
+        ([123, 123.45], "string_type"),
+        ("1.00", "string_pattern_mismatch"),
+    ],
 )
-def test_invoice_price_invalid(invoice_price):
-    with pytest.raises(ValidationError):
+def test_invoice_price_invalid(invoice_price, error_type):
+    with pytest.raises(ValidationError) as e:
         Invoice(
             invoice_date="230101",
             invoice_price=invoice_price,
@@ -64,11 +71,12 @@ def test_invoice_price_invalid(invoice_price):
             invoice_number="12345",
             invoice_copies="1",
         )
+    assert e.value.errors()[0]["type"] == error_type
 
 
 @pytest.mark.parametrize("invoice_shipping", ["123", "1234", "222222"])
 def test_invoice_shipping_valid(invoice_shipping):
-    with nullcontext():
+    with does_not_raise():
         Invoice(
             invoice_date="230101",
             invoice_price="123",
@@ -81,11 +89,17 @@ def test_invoice_shipping_valid(invoice_shipping):
 
 
 @pytest.mark.parametrize(
-    "invoice_shipping",
-    [1.00, 12, None, [123, 123.45]],
+    "invoice_shipping, error_type",
+    [
+        (1.00, "string_type"),
+        (12, "string_type"),
+        (None, "string_type"),
+        ([123, 123.45], "string_type"),
+        ("1.00", "string_pattern_mismatch"),
+    ],
 )
-def test_invoice_shipping_invalid(invoice_shipping):
-    with pytest.raises(ValidationError):
+def test_invoice_shipping_invalid(invoice_shipping, error_type):
+    with pytest.raises(ValidationError) as e:
         Invoice(
             invoice_date="230101",
             invoice_price="123",
@@ -95,11 +109,12 @@ def test_invoice_shipping_invalid(invoice_shipping):
             invoice_number="12345",
             invoice_copies="1",
         )
+    assert e.value.errors()[0]["type"] == error_type
 
 
 @pytest.mark.parametrize("invoice_tax", ["123", "1234", "222222"])
 def test_invoice_tax_valid(invoice_tax):
-    with nullcontext():
+    with does_not_raise():
         Invoice(
             invoice_date="230101",
             invoice_price="123",
@@ -112,11 +127,17 @@ def test_invoice_tax_valid(invoice_tax):
 
 
 @pytest.mark.parametrize(
-    "invoice_tax",
-    [1.00, 12, None, [123, 123.45]],
+    "invoice_tax, error_type",
+    [
+        (1.00, "string_type"),
+        (12, "string_type"),
+        (None, "string_type"),
+        ([123, 123.45], "string_type"),
+        ("1.00", "string_pattern_mismatch"),
+    ],
 )
-def test_invoice_tax_invalid(invoice_tax):
-    with pytest.raises(ValidationError):
+def test_invoice_tax_invalid(invoice_tax, error_type):
+    with pytest.raises(ValidationError) as e:
         Invoice(
             invoice_date="230101",
             invoice_price="123",
@@ -126,11 +147,12 @@ def test_invoice_tax_invalid(invoice_tax):
             invoice_number="12345",
             invoice_copies="1",
         )
+    assert e.value.errors()[0]["type"] == error_type
 
 
 @pytest.mark.parametrize("invoice_net_price", ["123", "1234", "222222"])
 def test_invoice_net_price_valid(invoice_net_price):
-    with nullcontext():
+    with does_not_raise():
         Invoice(
             invoice_date="230101",
             invoice_price="123",
@@ -143,11 +165,17 @@ def test_invoice_net_price_valid(invoice_net_price):
 
 
 @pytest.mark.parametrize(
-    "invoice_net_price",
-    [1.00, 12, None, [123, 123.45]],
+    "invoice_net_price, error_type",
+    [
+        (1.00, "string_type"),
+        (12, "string_type"),
+        (None, "string_type"),
+        ([123, 123.45], "string_type"),
+        ("1.00", "string_pattern_mismatch"),
+    ],
 )
-def test_invoice_net_price_invalid(invoice_net_price):
-    with pytest.raises(ValidationError):
+def test_invoice_net_price_invalid(invoice_net_price, error_type):
+    with pytest.raises(ValidationError) as e:
         Invoice(
             invoice_date="230101",
             invoice_price="123",
@@ -157,11 +185,12 @@ def test_invoice_net_price_invalid(invoice_net_price):
             invoice_number="12345",
             invoice_copies="1",
         )
+    assert e.value.errors()[0]["type"] == error_type
 
 
 @pytest.mark.parametrize("invoice_number", ["12345", "11111", "22222"])
 def test_invoice_number_valid(invoice_number):
-    with nullcontext():
+    with does_not_raise():
         Invoice(
             invoice_date="230101",
             invoice_price="123",
@@ -178,7 +207,7 @@ def test_invoice_number_valid(invoice_number):
     [1, 12, None, ["1", "2"], {"invoice_number": "231001"}],
 )
 def test_invoice_number_invalid(invoice_number):
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError) as e:
         Invoice(
             invoice_date="230101",
             invoice_price="123",
@@ -188,11 +217,12 @@ def test_invoice_number_invalid(invoice_number):
             invoice_number=invoice_number,
             invoice_copies="1",
         )
+    assert e.value.errors()[0]["type"] == "string_type"
 
 
 @pytest.mark.parametrize("invoice_copies", ["1", "2", "12"])
 def test_invoice_copies_valid(invoice_copies):
-    with nullcontext():
+    with does_not_raise():
         Invoice(
             invoice_date="230101",
             invoice_price="123",
@@ -205,11 +235,16 @@ def test_invoice_copies_valid(invoice_copies):
 
 
 @pytest.mark.parametrize(
-    "invoice_copies",
-    [1.00, 12, None, "foo"],
+    "invoice_copies, error_type",
+    [
+        (1.00, "string_type"),
+        (12, "string_type"),
+        (None, "string_type"),
+        ("foo", "string_pattern_mismatch"),
+    ],
 )
-def test_invoice_copies_invalid(invoice_copies):
-    with pytest.raises(ValidationError):
+def test_invoice_copies_invalid(invoice_copies, error_type):
+    with pytest.raises(ValidationError) as e:
         Invoice(
             invoice_date="230101",
             invoice_price="123",
@@ -219,3 +254,4 @@ def test_invoice_copies_invalid(invoice_copies):
             invoice_number="123455",
             invoice_copies=invoice_copies,
         )
+    assert e.value.errors()[0]["type"] == error_type

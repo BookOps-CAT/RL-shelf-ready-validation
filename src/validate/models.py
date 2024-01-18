@@ -135,9 +135,6 @@ class Record(BaseModel):
     order: Order
     invoice: Invoice
 
-    # @model_validator(mode="before")
-    # def items_list_to_dict(self) -> "Record":
-
     @model_validator(mode="wrap")
     def match_locations(self, handler) -> "Record":
         """
@@ -201,38 +198,11 @@ class Record(BaseModel):
             ):
                 pass
             case ("monograph_record", None, *_):
-                validation_errors.append(
-                    InitErrorDetails(
-                        type=PydanticCustomError(
-                            "Item/Order location check",
-                            "Could not compare Item and Order records because item_location is missing.",
-                        ),
-                        loc=("item", "item_location"),
-                        input=(self.get("item")),
-                    )
-                )
+                pass
             case ("monograph_record", item_location, None, *_):
-                validation_errors.append(
-                    InitErrorDetails(
-                        type=PydanticCustomError(
-                            "Item/Order location check",
-                            "Could not compare Item and Order records because item_type is missing.",
-                        ),
-                        loc=("item", "item_location"),
-                        input=(self.get("item")),
-                    )
-                )
+                pass
             case ("monograph_record", item_location, item_type, None):
-                validation_errors.append(
-                    InitErrorDetails(
-                        type=PydanticCustomError(
-                            "Item/Order location check",
-                            "Could not compare Item and Order records because order_location is missing.",
-                        ),
-                        loc=("order", "order_location"),
-                        input=(self.get("order")),
-                    )
-                )
+                pass
             case (
                 "catalogue_raissonne"
                 | "performing_arts_dance"
@@ -303,7 +273,7 @@ class Record(BaseModel):
                     InitErrorDetails(
                         type=PydanticCustomError(
                             "Call Number test",
-                            "Records for this item type should not have a call number.",
+                            "Record should not have a call_no. Check item type",
                         ),
                         loc=("material_type", "bib_call_no"),
                         input=(self),
