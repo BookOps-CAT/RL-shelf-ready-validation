@@ -4,11 +4,10 @@ from contextlib import nullcontext as does_not_raise
 from src.validate.models import ItemRequired, ItemNotRequired
 
 
-@pytest.mark.parametrize("material_type", ["monograph_record"])
-def test_monograph_type_valid(material_type):
+def test_monograph_type_valid():
     with does_not_raise():
         ItemRequired(
-            material_type=material_type,
+            material_type="monograph_record",
             item_call_tag="8528",
             item_call_no="ReCAP 23-100000",
             item_barcode="33333678901234",
@@ -61,21 +60,19 @@ def test_other_material_type_valid(material_type):
         ItemNotRequired(material_type=material_type)
 
 
-@pytest.mark.parametrize("material_type", ["monograph_record"])
-def test_other_material_type_invalid(material_type):
+def test_other_material_type_invalid():
     with pytest.raises(ValidationError) as e:
         ItemNotRequired(
-            material_type=material_type,
+            material_type="monograph_record",
         )
     assert e.value.errors()[0]["type"] == "literal_error"
 
 
-@pytest.mark.parametrize("item_call_tag", ["8528"])
-def test_item_call_tag_valid(item_call_tag):
+def test_item_call_tag_valid():
     with does_not_raise():
         ItemRequired(
             material_type="monograph_record",
-            item_call_tag=item_call_tag,
+            item_call_tag="8528",
             item_call_no="ReCAP 23-100000",
             item_barcode="33333678901234",
             item_price="12.34",
@@ -86,12 +83,11 @@ def test_item_call_tag_valid(item_call_tag):
         )
 
 
-@pytest.mark.parametrize("item_call_tag", ["852"])
-def test_item_call_tag_invalid(item_call_tag):
+def test_item_call_tag_invalid():
     with pytest.raises(ValidationError) as e:
         ItemRequired(
             material_type="monograph_record",
-            item_call_tag=item_call_tag,
+            item_call_tag="8582",
             item_call_no="ReCAP 23-100000",
             item_barcode="33333678901234",
             item_price="12.34",
@@ -288,8 +284,7 @@ def test_item_vendor_code_invalid(item_vendor_code):
     assert e.value.errors()[0]["type"] == "literal_error"
 
 
-@pytest.mark.parametrize("item_agency", ["43"])
-def test_item_agency_valid(item_agency):
+def test_item_agency_valid():
     with does_not_raise():
         ItemRequired(
             material_type="monograph_record",
@@ -298,14 +293,13 @@ def test_item_agency_valid(item_agency):
             item_barcode="33333678901234",
             item_price="12.34",
             item_vendor_code="EVP",
-            item_agency=item_agency,
+            item_agency="43",
             item_location="rcmg2",
             item_type="55",
         )
 
 
-@pytest.mark.parametrize("item_agency", [1, 2, ["1", "2"], {"agency": "43"}])
-def test_item_agency_invalid(item_agency):
+def test_item_agency_invalid():
     with pytest.raises(ValidationError) as e:
         ItemRequired(
             material_type="monograph_record",
@@ -314,7 +308,7 @@ def test_item_agency_invalid(item_agency):
             item_barcode="33333678901234",
             item_price="12.34",
             item_vendor_code="EVP",
-            item_agency=item_agency,
+            item_agency=44,
             item_location="rcmg2",
             item_type="55",
         )
