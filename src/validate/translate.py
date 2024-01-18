@@ -33,14 +33,6 @@ def read_marc_to_dict(file):
             yield output
 
 
-def get_field(record, f):
-    try:
-        field = record[f]
-        return field
-    except KeyError as e:
-        return e
-
-
 def get_field_from_list(record, f):
     try:
         field = record[f][0]
@@ -98,10 +90,11 @@ def get_order_data(record, f):
         output_dict = {}
         for subfield in field["subfields"]:
             output_dict.update(subfield)
-            edited = {}
-            edited["order_price"] = get_subfield(output_dict, "s")
-            edited["order_location"] = get_subfield(output_dict, "t")
-            edited["order_fund"] = get_subfield(output_dict, "u")
+            edited = {
+                "order_price": get_subfield(output_dict, "s"),
+                "order_location": get_subfield(output_dict, "t"),
+                "order_fund": get_subfield(output_dict, "u"),
+            }
             output = {
                 key: val for key, val in edited.items() if type(val) is not KeyError
             }
@@ -114,14 +107,15 @@ def get_invoice_data(record, f):
         output_dict = {}
         for subfield in field["subfields"]:
             output_dict.update(subfield)
-            edited = {}
-            edited["invoice_date"] = get_subfield(output_dict, "a")
-            edited["invoice_price"] = get_subfield(output_dict, "b")
-            edited["invoice_shipping"] = get_subfield(output_dict, "c")
-            edited["invoice_tax"] = get_subfield(output_dict, "d")
-            edited["invoice_net_price"] = get_subfield(output_dict, "e")
-            edited["invoice_number"] = get_subfield(output_dict, "f")
-            edited["invoice_copies"] = get_subfield(output_dict, "g")
+            edited = {
+                "invoice_date": get_subfield(output_dict, "a"),
+                "invoice_price": get_subfield(output_dict, "b"),
+                "invoice_shipping": get_subfield(output_dict, "c"),
+                "invoice_tax": get_subfield(output_dict, "d"),
+                "invoice_net_price": get_subfield(output_dict, "e"),
+                "invoice_number": get_subfield(output_dict, "f"),
+                "invoice_copies": get_subfield(output_dict, "g"),
+            }
             output = {
                 key: val for key, val in edited.items() if type(val) is not KeyError
             }
@@ -135,19 +129,20 @@ def get_item_data(record, f):
         output_dict = {}
         for subfield in field["subfields"]:
             output_dict.update(subfield)
-            edited = {}
-            edited["material_type"] = get_material_type(record)
-            edited["item_call_tag"] = get_subfield(output_dict, "z")
-            edited["item_call_no"] = get_subfield(output_dict, "a")
-            edited["item_barcode"] = get_subfield(output_dict, "i")
-            edited["item_price"] = get_subfield(output_dict, "p")
-            edited["item_volume"] = get_subfield(output_dict, "c")
-            edited["item_message"] = get_subfield(output_dict, "u")
-            edited["message"] = get_subfield(output_dict, "m")
-            edited["item_vendor_code"] = get_subfield(output_dict, "v")
-            edited["item_agency"] = get_subfield(output_dict, "h")
-            edited["item_location"] = get_subfield(output_dict, "l")
-            edited["item_type"] = get_subfield(output_dict, "t")
+            edited = {
+                "material_type": get_material_type(record),
+                "item_call_tag": get_subfield(output_dict, "z"),
+                "item_call_no": get_subfield(output_dict, "a"),
+                "item_barcode": get_subfield(output_dict, "i"),
+                "item_price": get_subfield(output_dict, "p"),
+                "item_volume": get_subfield(output_dict, "c"),
+                "item_message": get_subfield(output_dict, "u"),
+                "message": get_subfield(output_dict, "m"),
+                "item_vendor_code": get_subfield(output_dict, "v"),
+                "item_agency": get_subfield(output_dict, "h"),
+                "item_location": get_subfield(output_dict, "l"),
+                "item_type": get_subfield(output_dict, "t"),
+            }
             output = {
                 key: val for key, val in edited.items() if type(val) is not KeyError
             }
@@ -157,20 +152,15 @@ def get_item_data(record, f):
 
 def convert_to_input(record: dict) -> Dict:
     try:
-        bib_call_no = get_nested_subfield(record, "852", "h")
-        bib_vendor_code = get_nested_subfield(record, "901", "a")
-        rl_identifier = get_nested_subfield(record, "910", "a")
-        lcc = get_nested_subfield(record, "050", "a")
-        control_number = get_field_from_list(record, "001")
         items = get_item_data(record, "949")
         order = get_order_data(record, "960")
         invoice = get_invoice_data(record, "980")
         record = {
-            "control_number": control_number,
-            "bib_call_no": bib_call_no,
-            "bib_vendor_code": bib_vendor_code,
-            "rl_identifier": rl_identifier,
-            "lcc": lcc,
+            "control_number": get_field_from_list(record, "001"),
+            "bib_call_no": get_nested_subfield(record, "852", "h"),
+            "bib_vendor_code": get_nested_subfield(record, "901", "a"),
+            "rl_identifier": get_nested_subfield(record, "910", "a"),
+            "lcc": get_nested_subfield(record, "050", "a"),
             "items": items,
             "order": order,
             "invoice": invoice,

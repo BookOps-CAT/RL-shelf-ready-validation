@@ -52,19 +52,37 @@ def test_convert_multivol_record_to_input(stub_record_dict):
     assert converted["item"]["material_type"] == "multipart"
 
 
-def test_convert_CR_record_to_input(stub_record_dict):
-    stub_record_dict["650"] = [
-        {
-            "ind1": " ",
-            "ind2": "0",
-            "subfields": [
-                {"a": "Foo"},
-                {"x": "Bar"},
-                {"y": "19th century"},
-                {"v": "Catalogue Raissonne"},
-            ],
-        }
-    ]
+@pytest.mark.parametrize(
+    "field",
+    [
+        [
+            {
+                "ind1": " ",
+                "ind2": "0",
+                "subfields": [
+                    {"a": "Foo"},
+                    {"x": "Bar"},
+                    {"y": "19th century"},
+                    {"v": "Catalogues Raissonnes"},
+                ],
+            }
+        ],
+        [
+            {
+                "ind1": " ",
+                "ind2": "0",
+                "subfields": [
+                    {"a": "Foo"},
+                    {"x": "Bar"},
+                    {"y": "19th century"},
+                    {"v": "Catalogue Raissonne"},
+                ],
+            }
+        ],
+    ],
+)
+def test_convert_CR_record_to_input(stub_record_dict, field):
+    stub_record_dict["650"] = field
     converted = convert_to_input(stub_record_dict)
     assert converted["item"]["material_type"] == "catalogue_raissonne"
 
