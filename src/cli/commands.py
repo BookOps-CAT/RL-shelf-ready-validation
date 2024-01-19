@@ -1,5 +1,5 @@
 import click
-from src.validate.models import Record
+from src.validate.models_v2 import Record, MonographRecord, ItemNYPLRL
 from src.validate.errors import (
     get_error_count,
     format_error_messages,
@@ -90,7 +90,6 @@ def validate_all(file):
     records = read_marc_to_dict(file)
     n = 0
     while True:
-        # output_list = []
         console.print("\n\nChecking all records...")
         console.print("Printing results...\n\n")
         for record in records:
@@ -102,6 +101,66 @@ def validate_all(file):
             )
             try:
                 Record(**converted_record)
+                console.print(f"Validated successfully!")
+            except ValidationError as e:
+                formatted_errors = format_error_messages(e)
+                error_count = get_error_count(e)
+                console.print(
+                    f"Record contains [error_count]{error_count} error(s)[/error_count]:"
+                )
+                for error in formatted_errors:
+                    console.print(f"\t{error[0]}: {error[1]}")
+        console.print("Finished checking records.")
+        break
+
+
+@cli.command("validate-all-v2")
+@click.option("-f", "--file", prompt=True)
+def validate_all_v2(file):
+    reader = read_marc_records(file)
+    n = 0
+    while True:
+        console.print("\n\nChecking all records...")
+        console.print("Printing results...\n\n")
+        for r in reader:
+            n += 1
+            control_number = r.get("001")
+            console.print(
+                f"\n\n[record_number]Record #{n}[/record_number] (control_no [control_no]{control_number}[/control_no])"
+            )
+            try:
+                Record(
+                    MonographRecord(
+                        material_type=r.get("949").get("z"),
+                        bib_call_no=r.get("852").get("h"),
+                        bib_vendor_code=r.get("901").get("a"),
+                        lcc=r.get("050").get("a"),
+                        invoice_date=r.get("980").get("a"),
+                        invoice_price=r.get("980").get("b"),
+                        invoice_shipping=r.get("980").get("c"),
+                        invoice_tax=r.get("980").get("d"),
+                        invoice_net_price=r.get("980").get("e"),
+                        invoice_number=r.get("980").get("f"),
+                        invoice_copies=r.get("980").get("g"),
+                        order_price=r.get("960").get("s"),
+                        order_location=r.get("960").get("s"),
+                        order_fund=r.get("960").get("u"),
+                        library="RL",
+                        items=[
+                            ItemNYPLRL(
+                                item_call_tag=r.get("949").get("z"),
+                                item_call_no=r.get("949").get("a"),
+                                item_barcode=r.get("949").get("i"),
+                                item_price=r.get("949").get("p"),
+                                item_vendor_code=r.get("949").get("v"),
+                                item_agency=r.get("949").get("h"),
+                                item_location=r.get("949").get("l"),
+                                item_type=r.get("949").get("t"),
+                                library="RL",
+                            )
+                        ],
+                    )
+                )
                 console.print(f"Validated successfully!")
             except ValidationError as e:
                 formatted_errors = format_error_messages(e)

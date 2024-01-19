@@ -11,6 +11,40 @@ def read_marc_records(file):
             yield record
 
 
+def get_field_subfield(record, f, s):
+    try:
+        field_subfield = record[f][s]
+        return field_subfield
+    except KeyError as e:
+        return e
+
+
+def create_input(reader):
+    for record in reader:
+        material_type = record.get("949").get("z")
+        bib_call_no = record.get("852").get("h")
+        bib_vendor_code = record.get("901").get("a")
+        lcc = record.get("050").get("a")
+        invoice_date = record.get("980").get("a")
+        invoice_price = record.get("980").get("b")
+        invoice_shipping = record.get("980").get("c")
+        invoice_tax = record.get("980").get("d")
+        invoice_net_price = record.get("980").get("e")
+        invoice_number = record.get("980").get("f")
+        invoice_copies = record.get("980").get("g")
+        order_price = record.get("960").get("s")
+        order_location = record.get("960").get("s")
+        order_fund = record.get("960").get("u")
+        item_call_tag = record.get("949").get("z")
+        item_call_no = record.get("949").get("a")
+        item_barcode = record.get("949").get("i")
+        item_price = record.get("949").get("p")
+        item_vendor_code = record.get("949").get("v")
+        item_agency = record.get("949").get("h")
+        item_location = record.get("949").get("l")
+        item_type = record.get("949").get("t")
+
+
 def read_marc_to_dict(file):
     with open(file, "rb") as fh:
         reader = SierraBibReader(fh)

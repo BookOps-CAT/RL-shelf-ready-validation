@@ -89,6 +89,10 @@ class ItemNotRequired(BaseModel):
     ]
 
 
+class Items(BaseModel):
+    """ """
+
+
 class Invoice(BaseModel):
     """
     a class to define an invoice record from marc 980 field
@@ -131,7 +135,7 @@ class Record(BaseModel):
     item: Union[ItemRequired, ItemNotRequired] = Field(
         ..., discriminator="material_type"
     )
-    # item: List[ItemRequired]
+
     order: Order
     invoice: Invoice
 

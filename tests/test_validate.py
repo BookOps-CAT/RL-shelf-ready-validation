@@ -11,7 +11,7 @@ def test_read_marc_records():
     n = 0
     for record in reader:
         n += 1
-    assert n == 6
+    assert n == 10
 
 
 def test_read_marc_to_dict():
@@ -20,7 +20,7 @@ def test_read_marc_to_dict():
     for record in reader:
         control_number = record["001"]
         control_numbers.append(control_number)
-    assert len(control_numbers) == 6
+    assert len(control_numbers) == 10
 
 
 def test_convert_to_input(stub_record_dict):
