@@ -1,7 +1,35 @@
 from bookops_marc import SierraBibReader
+
+# from pymarc import MARCReader
 from collections import defaultdict
 from typing import Dict
-from unidecode import unidecode
+from enum import Enum
+
+
+class RLMarcEncoding(Enum):
+    bib_call_no = "852$h"
+    bib_vendor_code = "901$a"
+    lcc = "050$a"
+    invoice_date = "980$a"
+    invoice_price = "980$b"
+    invoice_shipping = "980$c"
+    invoice_tax = "980$d"
+    invoice_net_price = "980$e"
+    invoice_number = "980$f"
+    invoice_copies = "980$g"
+    order_price = "960$s"
+    order_location = "960$t"
+    order_fund = "960$s"
+    item_call_tag = "949z"
+    item_call_no = "949$a"
+    item_barcode = "949$i"
+    item_price = "949$p"
+    item_vendor_code = "949$v"
+    item_agency = "949$h"
+    item_location = "949$l"
+    item_type = "949$t"
+    library = "910$a"
+    items = "949"
 
 
 def read_marc_records(file):
@@ -12,6 +40,10 @@ def read_marc_records(file):
 
 
 def get_field_subfield(record, f, s):
+    """
+    gets value of subfield and returns it to be assigned to a variable
+    if subfield does not exist, returns "no_field" to be parsed in later validator
+    """
     try:
         field_subfield = record[f][s]
         return field_subfield
@@ -19,193 +51,95 @@ def get_field_subfield(record, f, s):
         return e
 
 
-def create_input(reader):
-    for record in reader:
-        material_type = record.get("949").get("z")
-        bib_call_no = record.get("852").get("h")
-        bib_vendor_code = record.get("901").get("a")
-        lcc = record.get("050").get("a")
-        invoice_date = record.get("980").get("a")
-        invoice_price = record.get("980").get("b")
-        invoice_shipping = record.get("980").get("c")
-        invoice_tax = record.get("980").get("d")
-        invoice_net_price = record.get("980").get("e")
-        invoice_number = record.get("980").get("f")
-        invoice_copies = record.get("980").get("g")
-        order_price = record.get("960").get("s")
-        order_location = record.get("960").get("s")
-        order_fund = record.get("960").get("u")
-        item_call_tag = record.get("949").get("z")
-        item_call_no = record.get("949").get("a")
-        item_barcode = record.get("949").get("i")
-        item_price = record.get("949").get("p")
-        item_vendor_code = record.get("949").get("v")
-        item_agency = record.get("949").get("h")
-        item_location = record.get("949").get("l")
-        item_type = record.get("949").get("t")
+def get_material_type(record):
+    """
+    get material type to determine which model to use when validating a record
 
-
-def read_marc_to_dict(file):
-    with open(file, "rb") as fh:
-        reader = SierraBibReader(fh)
-        for record in reader:
-            dict_record = record.as_dict()
-            output = {"leader": dict_record["leader"]}
-            all_fields = []
-            all_field_values = []
-            for field in dict_record["fields"]:
-                field_keys = list(field.keys())
-                field_values = list(field.values())
-                field_tag = field_keys[0]
-                field_data = field_values[0]
-                all_fields.append(field_tag)
-                all_field_values.append(field_data)
-            fields = defaultdict(list)
-            for tag, data in zip(all_fields, all_field_values):
-                fields[tag].append(data)
-            output.update(fields)
-            yield output
-
-
-def get_field_from_list(record, f):
-    try:
-        field = record[f][0]
-        return field
-    except KeyError as e:
-        return e
-
-
-def get_nested_subfield(record, f, s):
-    try:
-        subfield = record[f][0]["subfields"][0][s]
-        return subfield
-    except KeyError as e:
-        return e
-
-
-def get_subfield(subfield_list, s):
-    try:
-        subfield = subfield_list[s]
-        return subfield
-    except KeyError as e:
-        return e
-
-
-def get_material_type(record: dict) -> str:
-    # return material type
-    physical_desc = get_nested_subfield(record, "300", "a")
-    split_physical_desc = physical_desc.split()
-    subject_dict = {
-        key: value
-        for key, value in record.items()
-        if key in ["600", "650", "651", "655"]
-    }
-    if "pages" in physical_desc:
-        pages = int(split_physical_desc[0])
+    this function needs to be built out more
+    """
+    subjects = record.subjects
+    subjects.append(record.get_fields("600", "610", "650"))
+    physical_desc = record.physicaldescription
+    series = record.series
+    if "Catalogues Raisonnes" in subjects:
+        return "catalogue_raissonne"
+    elif "Catalogue Raissonne" in subjects:
+        return "catalogue_raissonne"
+    elif "pages" in physical_desc:
+        pages = int(physical_desc[0])
         if pages < 50:
-            material_type = "pamphlet"
-            return material_type
-    if "volumes" in physical_desc:
-        material_type = "multipart"
-        return material_type
-    if "Catalogues Raissonnes" in unidecode(str(subject_dict)):
-        material_type = "catalogue_raissonne"
-        return material_type
-    if "Catalogue Raissonne" in unidecode(str(subject_dict)):
-        material_type = "catalogue_raissonne"
-        return material_type
+            return "pamphlet"
+    elif "volumes" in physical_desc:
+        return "multipart"
+    elif series:
+        return "multipart"
     else:
-        material_type = "monograph_record"
-        return material_type
+        return "monograph_record"
 
 
-def get_order_data(record, f):
-    order_field = record[f]
-    for field in order_field:
-        output_dict = {}
-        for subfield in field["subfields"]:
-            output_dict.update(subfield)
-            edited = {
-                "order_price": get_subfield(output_dict, "s"),
-                "order_location": get_subfield(output_dict, "t"),
-                "order_fund": get_subfield(output_dict, "u"),
+def get_record_input(record):
+    library = get_field_subfield(record, "910", "a")
+    record_data = {
+        "material_type": get_material_type(record),
+        "bib_call_no": get_field_subfield(record, "852", "h"),
+        "bib_vendor_code": get_field_subfield(record, "901", "a"),
+        "lcc": get_field_subfield(record, "050", "a"),
+        "invoice_date": get_field_subfield(record, "980", "a"),
+        "invoice_price": get_field_subfield(record, "980", "b"),
+        "invoice_shipping": get_field_subfield(record, "980", "c"),
+        "invoice_tax": get_field_subfield(record, "980", "d"),
+        "invoice_net_price": get_field_subfield(record, "980", "e"),
+        "invoice_number": get_field_subfield(record, "980", "f"),
+        "invoice_copies": get_field_subfield(record, "980", "g"),
+        "order_price": get_field_subfield(record, "960", "s"),
+        "order_location": get_field_subfield(record, "960", "t"),
+        "order_fund": get_field_subfield(record, "960", "u"),
+    }
+    record_input = {
+        key: val for key, val in record_data.items() if type(val) is not KeyError
+    }
+    items = record.get_fields("949")
+    if len(items) == 0:
+        return record_input
+    else:
+        item_list = []
+        for item in items:
+            item_output = {
+                "item_call_tag": item.get("z"),
+                "item_call_no": item.get("a"),
+                "item_barcode": item.get("i"),
+                "item_price": item.get("p"),
+                "item_vendor_code": item.get("v"),
+                "item_agency": item.get("h"),
+                "item_location": item.get("l"),
+                "item_type": item.get("t"),
+                "library": library,
             }
-            output = {
-                key: val for key, val in edited.items() if type(val) is not KeyError
+            edited_item = {
+                key: val for key, val in item_output.items() if val is not None
             }
-    return output
+            item_list.append(edited_item)
+        record_input["items"] = item_list
+        return record_input
 
 
-def get_invoice_data(record, f):
-    invoice_field = record[f]
-    for field in invoice_field:
-        output_dict = {}
-        for subfield in field["subfields"]:
-            output_dict.update(subfield)
-            edited = {
-                "invoice_date": get_subfield(output_dict, "a"),
-                "invoice_price": get_subfield(output_dict, "b"),
-                "invoice_shipping": get_subfield(output_dict, "c"),
-                "invoice_tax": get_subfield(output_dict, "d"),
-                "invoice_net_price": get_subfield(output_dict, "e"),
-                "invoice_number": get_subfield(output_dict, "f"),
-                "invoice_copies": get_subfield(output_dict, "g"),
-            }
-            output = {
-                key: val for key, val in edited.items() if type(val) is not KeyError
-            }
-    return output
-
-
-def get_item_data(record, f):
-    item_field = record[f]
-    output_list = []
-    for field in item_field:
-        output_dict = {}
-        for subfield in field["subfields"]:
-            output_dict.update(subfield)
-            edited = {
-                "material_type": get_material_type(record),
-                "item_call_tag": get_subfield(output_dict, "z"),
-                "item_call_no": get_subfield(output_dict, "a"),
-                "item_barcode": get_subfield(output_dict, "i"),
-                "item_price": get_subfield(output_dict, "p"),
-                "item_volume": get_subfield(output_dict, "c"),
-                "item_message": get_subfield(output_dict, "u"),
-                "message": get_subfield(output_dict, "m"),
-                "item_vendor_code": get_subfield(output_dict, "v"),
-                "item_agency": get_subfield(output_dict, "h"),
-                "item_location": get_subfield(output_dict, "l"),
-                "item_type": get_subfield(output_dict, "t"),
-            }
-            output = {
-                key: val for key, val in edited.items() if type(val) is not KeyError
-            }
-        output_list.append(output)
-    return output_list
-
-
-def convert_to_input(record: dict) -> Dict:
-    try:
-        items = get_item_data(record, "949")
-        order = get_order_data(record, "960")
-        invoice = get_invoice_data(record, "980")
-        record = {
-            "control_number": get_field_from_list(record, "001"),
-            "bib_call_no": get_nested_subfield(record, "852", "h"),
-            "bib_vendor_code": get_nested_subfield(record, "901", "a"),
-            "rl_identifier": get_nested_subfield(record, "910", "a"),
-            "lcc": get_nested_subfield(record, "050", "a"),
-            "items": items,
-            "order": order,
-            "invoice": invoice,
-        }
-        record_output = {
-            key: val for key, val in record.items() if type(val) is not KeyError
-        }
-        if len(record_output["items"]) == 1:
-            record_output["item"] = record_output["items"][0]
-            del record_output["items"]
-        return record_output
-    except KeyError as e:
-        raise e
+# def read_marc_to_dict(file):
+#     with open(file, "rb") as fh:
+#         reader = MARCReader(fh)
+#         for record in reader:
+#             dict_record = record.as_dict()
+#             output = {"leader": dict_record["leader"]}
+#             all_fields = []
+#             all_field_values = []
+#             for field in dict_record["fields"]:
+#                 field_keys = list(field.keys())
+#                 field_values = list(field.values())
+#                 field_tag = field_keys[0]
+#                 field_data = field_values[0]
+#                 all_fields.append(field_tag)
+#                 all_field_values.append(field_data)
+#             fields = defaultdict(list)
+#             for tag, data in zip(all_fields, all_field_values):
+#                 fields[tag].append(data)
+#             output.update(fields)
+#             yield output

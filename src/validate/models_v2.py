@@ -1,13 +1,5 @@
-from pydantic import (
-    BaseModel,
-    Field,
-    ConfigDict,
-    model_validator,
-    ValidationError,
-)
-from typing import Literal, Optional, Annotated, Union, List
-from pydantic_core import InitErrorDetails, PydanticCustomError
-from src.validate.translate import read_marc_records
+from pydantic import BaseModel, Field, ConfigDict, ValidationError
+from typing import Any, Literal, Optional, Annotated, Union, List
 
 
 class ItemBPL(BaseModel):
@@ -16,7 +8,9 @@ class ItemBPL(BaseModel):
 
     """
 
-    model_config = ConfigDict(extra="ignore", validate_default=True)
+    model_config = ConfigDict(
+        extra="ignore", validate_default=True, revalidate_instances="always"
+    )
 
     item_call_tag: Literal["8528"]
     item_call_no: str
@@ -38,7 +32,9 @@ class ItemNYPLBL(BaseModel):
 
     """
 
-    model_config = ConfigDict(extra="ignore", validate_default=True)
+    model_config = ConfigDict(
+        extra="ignore", validate_default=True, revalidate_instances="always"
+    )
 
     item_call_tag: Literal["8528"]
     item_call_no: str
@@ -60,31 +56,43 @@ class ItemNYPLRL(BaseModel):
 
     """
 
-    model_config = ConfigDict(extra="ignore", validate_default=True)
+    model_config = ConfigDict(
+        extra="ignore", validate_default=True, revalidate_instances="always"
+    )
 
-    item_call_tag: Literal["8528"]
-    item_call_no: Annotated[str, Field(pattern=r"^ReCAP 23-\d{6}$|^ReCAP 24-\d{6}$")]
-    item_barcode: Annotated[str, Field(pattern=r"^33433[0-9]{9}$")]
-    item_price: Annotated[str, Field(pattern=r"^\d{1,}\.\d{2}$")]
-    item_volume: Optional[str] = None
-    item_message: Optional[Annotated[str, Field(pattern=r"^[^a-z]+")]] = None
-    message: Optional[Annotated[str, Field(pattern=r"^[^a-z]+")]] = None
-    item_vendor_code: Literal["EVP", "AUXAM"]
-    item_agency: str
-    item_location: Literal[
-        "rcmb2",
-        "rcmf2",
-        "rcmg2",
-        "rc2ma",
-        "rcmp2",
-        "rcmb2",
-        "rcph2",
-        "rcpm2",
-        "rcpt2",
-        "rc2cf",
+    item_call_tag: Annotated[Literal["8528"], Field(...)]
+    item_call_no: Annotated[
+        str, Field(..., pattern=r"^ReCAP 23-\d{6}$|^ReCAP 24-\d{6}$")
     ]
-    item_type: str
-    library: Literal["RL"]
+    item_barcode: Annotated[str, Field(..., pattern=r"^33433[0-9]{9}$")]
+    item_price: Annotated[str, Field(..., pattern=r"^\d{1,}\.\d{2}$")]
+    item_volume: Optional[str] = None
+    item_message: Optional[Annotated[str, Field(..., pattern=r"^[^a-z]+")]] = None
+    message: Optional[Annotated[str, Field(..., pattern=r"^[^a-z]+")]] = None
+    item_vendor_code: Annotated[Literal["EVP", "AUXAM"], Field(...)]
+    item_agency: str = Field(...)
+    item_location: Annotated[
+        Literal[
+            "rcmb2",
+            "rcmf2",
+            "rcmg2",
+            "rc2ma",
+            "rcmp2",
+            "rcmb2",
+            "rcph2",
+            "rcpm2",
+            "rcpt2",
+            "rc2cf",
+        ],
+        Field(...),
+    ]
+    item_type: str = Field(...)
+    library: Annotated[Literal["RL"], Field(...)]
+
+
+Item = Annotated[
+    Union[ItemNYPLRL, ItemNYPLBL, ItemBPL], Field(..., discriminator="library")
+]
 
 
 class MonographRecord(BaseModel):
@@ -93,7 +101,9 @@ class MonographRecord(BaseModel):
     with additional bibliographic data
     """
 
-    model_config = ConfigDict(extra="ignore", validate_default=True)
+    model_config = ConfigDict(
+        extra="ignore", validate_default=True, revalidate_instances="always"
+    )
 
     material_type: Literal["monograph_record"]
     bib_call_no: Annotated[str, Field(pattern=r"^ReCAP 23-\d{6}$|^ReCAP 24-\d{6}$")]
@@ -111,12 +121,7 @@ class MonographRecord(BaseModel):
         "MAB", "MAF", "MAG", "MAL", "MAP", "MAS", "PAD", "PAH", "PAM", "PAT", "SC"
     ]
     order_fund: str
-    items: Annotated[
-        List,
-        Union[ItemNYPLRL, ItemNYPLBL, ItemBPL],
-        Field(..., discriminator="library"),
-    ]
-    library: Literal["RL", "BL", "BPL"]
+    items: List[Item]
 
 
 class OtherMaterialRecord(BaseModel):
@@ -125,7 +130,9 @@ class OtherMaterialRecord(BaseModel):
     with additional bibliographic data
     """
 
-    model_config = ConfigDict(extra="forbid", validate_default=True)
+    model_config = ConfigDict(
+        extra="forbid", validate_default=True, revalidate_instances="always"
+    )
     material_type: Literal[
         "catalogue_raissonne",
         "performing_arts_dance",
@@ -147,10 +154,14 @@ class OtherMaterialRecord(BaseModel):
         "MAB", "MAF", "MAG", "MAL", "MAP", "MAS", "PAD", "PAH", "PAM", "PAT", "SC"
     ]
     order_fund: str
-    library: Literal["BPL", "RL", "BL"]
 
 
-Record = Annotated[
-    Union[MonographRecord, OtherMaterialRecord],
-    Field(discriminator="material_type"),
-]
+# RecordType = Annotated[
+#     Union[MonographRecord, OtherMaterialRecord],
+#     Field(discriminator="material_type"),
+# ]
+
+
+# class Record(BaseModel):
+#     record_type: RecordType
+#     library: Literal["BPL", "RL", "BL"]
