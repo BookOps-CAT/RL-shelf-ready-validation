@@ -78,10 +78,11 @@ def validate_records(file):
                         f"Record [marc_record]#{n}[/] contains [error_count]{error_count} error(s)[/]"
                     )
                     for error in formatted_errors:
-                        if error["input"] != error["loc"]:
-                            console.print(f"\t{error["msg"]}: {error["input"]} {error["loc"]}")
-                        else:
+                        if error["input"] == error["loc"]:
                             console.print(f"\t{error["msg"]}: {error["loc"]}")
+                            
+                        else:
+                            console.print(f"\t{error["msg"]}: {error["input"]} {error["loc"]}")
             else:
                 try:
                     OtherMaterialRecord(**converted_record)
@@ -93,10 +94,11 @@ def validate_records(file):
                         f"Record [marc_record]#{n}[/] contains [error_count]{error_count} error(s)[/]"
                     )
                     for error in formatted_errors:
-                        if error["input"] != error["loc"]:
-                            console.print(f"\t{error["msg"]}: {error["input"]} {error["loc"]}")
-                        else:
+                        if error["input"] == error["loc"]:
                             console.print(f"\t{error["msg"]}: {error["loc"]}")
+                            
+                        else:
+                            console.print(f"\t{error["msg"]}: {error["input"]} {error["loc"]}")
             click.pause(info="Press any key to read and validate next record\n")
         console.print("No more records")
         break
