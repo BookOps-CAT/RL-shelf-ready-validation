@@ -1,66 +1,72 @@
 import pytest
-from typing import TypedDict, Optional, Any
+from bookops_marc import Bib
+from pymarc import Field, Subfield
 
 
 @pytest.fixture
-def valid_nypl_rl_record():
-    valid_nypl_rl_record = {
-        "item": {
-            "material_type": "monograph_record",
-            "item_call_tag": "8528",
-            "item_call_no": "ReCAP 23-999999",
-            "item_barcode": "33433678901234",
-            "item_price": "12.34",
-            "item_vendor_code": "EVP",
-            "item_location": "rcmb2",
-            "item_type": "2",
-            "item_agency": "43",
-        },
-        "order": {
-            "order_location": "MAB",
-            "order_price": "1234",
-            "order_fund": "123456apprv",
-        },
-        "invoice": {
-            "invoice_date": "240101",
-            "invoice_price": "1234",
-            "invoice_shipping": "100",
-            "invoice_tax": "123",
-            "invoice_net_price": "1234",
-            "invoice_number": "1234567890",
-            "invoice_copies": "1",
-        },
+def valid_rl_monograph_record():
+    valid_rl_monograph_record = {
+        "material_type": "monograph_record",
         "bib_call_no": "ReCAP 23-999999",
         "bib_vendor_code": "EVP",
-        "rl_identifier": "RL",
         "lcc": "Z123",
+        "invoice_date": "240101",
+        "invoice_price": "100",
+        "invoice_shipping": "100",
+        "invoice_tax": "000",
+        "invoice_net_price": "200",
+        "invoice_number": "1234567890",
+        "invoice_copies": "1",
+        "order_price": "200",
+        "order_location": "MAB",
+        "order_fund": "123456apprv",
+        "items": [
+            {
+                "item_call_tag": "8528",
+                "item_call_no": "ReCAP 23-999999",
+                "item_barcode": "33433678901234",
+                "item_price": "2.00",
+                "item_vendor_code": "EVP",
+                "item_location": "rcmb2",
+                "item_type": "2",
+                "item_agency": "43",
+                "item_message": "FOO",
+                "message": "BAR",
+                "library": "RL",
+            },
+            {
+                "item_call_tag": "8528",
+                "item_call_no": "ReCAP 23-999998",
+                "item_barcode": "33433678901234",
+                "item_price": "2.00",
+                "item_vendor_code": "EVP",
+                "item_location": "rcmb2",
+                "item_type": "2",
+                "item_agency": "43",
+                "library": "RL",
+            },
+        ],
     }
-    return valid_nypl_rl_record
+    return valid_rl_monograph_record
 
 
 @pytest.fixture
 def valid_pamphlet_record():
     valid_pamphlet_record = {
-        "item": {
-            "material_type": "pamphlet",
-        },
-        "order": {
-            "order_location": "MAB",
-            "order_price": "1234",
-            "order_fund": "123456apprv",
-        },
-        "invoice": {
-            "invoice_date": "240101",
-            "invoice_price": "1234",
-            "invoice_shipping": "100",
-            "invoice_tax": "123",
-            "invoice_net_price": "1234",
-            "invoice_number": "1234567890",
-            "invoice_copies": "1",
-        },
+        "material_type": "pamphlet",
         "bib_vendor_code": "EVP",
-        "rl_identifier": "RL",
         "lcc": "Z123",
+        "invoice_date": "240101",
+        "invoice_price": "100",
+        "invoice_shipping": "100",
+        "invoice_tax": "000",
+        "invoice_net_price": "200",
+        "invoice_number": "1234567890",
+        "invoice_copies": "1",
+        "order_price": "200",
+        "order_location": "MAB",
+        "order_fund": "123456apprv",
+        "library": "RL",
     }
     return valid_pamphlet_record
 
@@ -104,111 +110,106 @@ def extra_field_error():
 
 
 @pytest.fixture
-def stub_record_dict():
-    stub_record_dict = {
-        "leader": "00820cam a22001935i 4500",
-        "001": ["on1381158740"],
-        "050": [
-            {
-                "ind1": " ",
-                "ind2": "4",
-                "subfields": [{"a": "DK504.73"}, {"b": ".D86 2022"}],
-            }
-        ],
-        "245": [
-            {
-                "ind1": "0",
-                "ind2": "0",
-                "subfields": [
-                    {"a": "Dunikas Laika grāmata 1812-1858 /"},
-                    {
-                        "c": "atbildīgā redaktore Anita Helviga ; sagatavotāji Agris Dzenis, Mihails Ignats, Inese Veisbuka."
-                    },
-                ],
-            }
-        ],
-        "300": [
-            {
-                "ind1": " ",
-                "ind2": " ",
-                "subfields": [
-                    {"a": "248 pages :"},
-                    {"b": "color illustrations, color maps, color photographs ;"},
-                    {"c": "31 cm"},
-                ],
-            }
-        ],
-        "600": [
-            {
-                "ind1": "1",
-                "ind2": "0",
-                "subfields": [
-                    {"a": "Mucenieks, Jānis,"},
-                    {"d": "1800-1885."},
-                    {"t": "Laika grāmata."},
-                ],
-            },
-        ],
-        "651": [
-            {
-                "ind1": " ",
-                "ind2": "0",
-                "subfields": [
-                    {"a": "Latvia"},
-                    {"x": "History"},
-                    {"y": "19th century"},
-                    {"v": "Sources."},
-                ],
-            },
-        ],
-        "852": [{"ind1": "8", "ind2": " ", "subfields": [{"h": "ReCAP 23-108996"}]}],
-        "901": [{"ind1": " ", "ind2": " ", "subfields": [{"a": "EVP"}]}],
-        "910": [{"ind1": " ", "ind2": " ", "subfields": [{"a": "RL"}]}],
-        "949": [
-            {
-                "ind1": " ",
-                "ind2": "1",
-                "subfields": [
-                    {"z": "8528"},
-                    {"p": "7.77"},
-                    {"v": "EVP"},
-                    {"h": "43"},
-                    {"a": "ReCAP 23-108996"},
-                    {"l": "rc2ma"},
-                    {"t": "55"},
-                    {"i": "33433678901234"},
-                ],
-            }
-        ],
-        "960": [
-            {
-                "ind1": " ",
-                "ind2": " ",
-                "subfields": [
-                    {"s": "8372"},
-                    {"t": "MAL"},
-                    {"u": "50108latv"},
-                    {"d": "r"},
-                    {"e": "f"},
-                    {"i": "a"},
-                    {"g": "q"},
-                ],
-            }
-        ],
-        "980": [
-            {
-                "ind1": " ",
-                "ind2": " ",
-                "subfields": [
-                    {"a": "230918"},
-                    {"b": "7700"},
-                    {"c": "672"},
-                    {"d": "000"},
-                    {"e": "8372"},
-                    {"f": "20048818"},
-                    {"g": "1"},
-                ],
-            }
-        ],
-    }
-    return stub_record_dict
+def stub_record():
+    bib = Bib()
+    bib.leader = "00820cam a22001935i 4500"
+    bib.add_field(Field(tag="008", data="190306s2017    ht a   j      000 1 hat d"))
+    bib.add_field(Field(tag="001", data="on1381158740"))
+    bib.add_field(
+        Field(
+            tag="050",
+            indicators=["", "4"],
+            subfields=[
+                Subfield(code="a", value="DK504.73"),
+                {"a": "DK504.73"},
+                Subfield(code="b", value=".D86 2022"),
+            ],
+        )
+    )
+    bib.add_field(
+        Field(
+            tag="245",
+            indicators=["0", "0"],
+            subfields=[
+                Subfield(code="a", value="Dunikas Laika grāmata 1812-1858 /"),
+                Subfield(
+                    code="c",
+                    value="atbildīgā redaktore Anita Helviga ; sagatavotāji Agris Dzenis, Mihails Ignats, Inese Veisbuka.",
+                ),
+            ],
+        )
+    )
+    bib.add_field(
+        Field(
+            tag="300",
+            indicators=[" ", " "],
+            subfields=[
+                Subfield(code="a", value="200 pages :"),
+            ],
+        )
+    )
+    bib.add_field(
+        Field(
+            tag="600",
+            indicators=["1", "0"],
+            subfields=[
+                Subfield(code="a", value="Mucenieks, Jānis,"),
+                Subfield(code="d", value="1800-1885."),
+                Subfield(code="t", value="Laika grāmata."),
+            ],
+        )
+    )
+    bib.add_field(
+        Field(
+            tag="852",
+            indicators=["8", ""],
+            subfields=[
+                Subfield(code="h", value="ReCAP 23-100000"),
+            ],
+        )
+    )
+    bib.add_field(
+        Field(
+            tag="901",
+            indicators=["", ""],
+            subfields=[
+                Subfield(code="a", value="EVP"),
+            ],
+        )
+    )
+    bib.add_field(
+        Field(
+            tag="910",
+            indicators=["", ""],
+            subfields=[
+                Subfield(code="a", value="RL"),
+            ],
+        )
+    )
+    bib.add_field(
+        Field(
+            tag="960",
+            indicators=[" ", " "],
+            subfields=[
+                Subfield(code="s", value="100"),
+                Subfield(code="t", value="MAL"),
+                Subfield(code="u", value="123456apprv"),
+            ],
+        )
+    )
+    bib.add_field(
+        Field(
+            tag="980",
+            indicators=[" ", " "],
+            subfields=[
+                Subfield(code="a", value="230918"),
+                Subfield(code="b", value="100"),
+                Subfield(code="c", value="100"),
+                Subfield(code="d", value="000"),
+                Subfield(code="e", value="100"),
+                Subfield(code="f", value="20048818"),
+                Subfield(code="g", value="1"),
+            ],
+        )
+    )
+    return bib
