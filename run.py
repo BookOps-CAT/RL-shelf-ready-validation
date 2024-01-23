@@ -1,4 +1,5 @@
-from src.cli.commands import cli
+from src.commands import cli
+
 
 if __name__ == "__main__":
     cli()

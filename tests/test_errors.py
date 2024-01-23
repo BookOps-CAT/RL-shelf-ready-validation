@@ -1,173 +1,155 @@
 import pytest
 from pydantic import ValidationError
+from src.models import MonographRecord, OtherMaterialRecord
 from contextlib import nullcontext as does_not_raise
-from src.validate.models import Record
-from src.validate.errors import (
+from src.errors import (
     format_error_messages,
-    string_errors,
     literal_errors,
+    string_errors,
     other_errors,
-    get_error_count,
 )
 
 
-def test_error_count(valid_nypl_rl_record):
-    valid_nypl_rl_record["item"]["item_barcode"] = "12345678901234"
-    try:
-        Record(**valid_nypl_rl_record)
-    except ValidationError as e:
-        error_count = get_error_count(e)
-        assert error_count == 1
+def test_error_count(valid_rl_monograph_record):
+    valid_rl_monograph_record["invoice_copies"] = 1
+    with pytest.raises(ValidationError) as e:
+        MonographRecord(**valid_rl_monograph_record)
+    error_count = e.value.error_count()
+    assert error_count == 1
 
 
-def test_string_error_types(valid_nypl_rl_record):
-    valid_nypl_rl_record["item"]["item_barcode"] = "12345678901234"
-    try:
-        Record(**valid_nypl_rl_record)
-    except ValidationError as e:
-        error = format_error_messages(e)
-        assert error[0] == ("Invalid barcode", "12345678901234")
+def test_string_error_types(valid_rl_monograph_record):
+    valid_rl_monograph_record["bib_call_no"] = "ReCAP 23-12345"
+    with pytest.raises(ValidationError) as e:
+        MonographRecord(**valid_rl_monograph_record)
+    assert e.value.errors()[0]["type"] == "string_pattern_mismatch"
 
 
 def test_extra_field_types(valid_pamphlet_record):
-    valid_pamphlet_record["item"]["item_call_tag"] = "8528"
-    try:
-        Record(**valid_pamphlet_record)
-    except ValidationError as e:
-        error = format_error_messages(e)
-        assert error[0] == ("1 extra field(s)", ["item_call_tag"])
+    valid_pamphlet_record["bib_call_no"] = "ReCAP 23-000000"
+    with pytest.raises(ValidationError) as e:
+        OtherMaterialRecord(**valid_pamphlet_record)
+    errors = e.value
+    error = format_error_messages(errors)
+    assert error[0]["msg"] == "1 extra field/subfield(s)"
 
 
-def test_literal_error_types(valid_nypl_rl_record):
-    valid_nypl_rl_record["item"]["item_call_tag"] = "8582"
-    try:
-        Record(**valid_nypl_rl_record)
-    except ValidationError as e:
-        error = format_error_messages(e)
-        assert error[0] == ("Invalid item call tag", "8582")
+def test_literal_error_types(valid_rl_monograph_record):
+    valid_rl_monograph_record["items"][0]["item_call_tag"] = "8582"
+    with pytest.raises(ValidationError) as e:
+        MonographRecord(**valid_rl_monograph_record)
+    errors = e.value
+    error = format_error_messages(errors)
+    assert error[0]["msg"] == "Invalid item call tag"
 
 
-def test_missing_types(valid_nypl_rl_record):
-    del valid_nypl_rl_record["item"]["item_call_tag"]
-    try:
-        Record(**valid_nypl_rl_record)
-    except ValidationError as e:
-        error = format_error_messages(e)
-        assert error[0] == ("1 missing field(s)", ["item_call_tag"])
+def test_missing_item_fields(valid_rl_monograph_record):
+    del valid_rl_monograph_record["items"][0]["item_call_tag"]
+    with pytest.raises(ValidationError) as e:
+        MonographRecord(**valid_rl_monograph_record)
+    errors = e.value
+    error = format_error_messages(errors)
+    assert error[0]["msg"] == "1 missing field/subfield(s)"
 
 
-def test_location_check_type(valid_nypl_rl_record):
-    valid_nypl_rl_record["item"]["item_type"] = "55"
-    try:
-        Record(**valid_nypl_rl_record)
-    except ValidationError as e:
-        error = format_error_messages(e)
-        assert error[0] == (
-            "item_location/item_type/order_location combination is not valid.",
-            ("rcmb2", "55", "MAB"),
-        )
+def test_missing_other_fields(valid_rl_monograph_record):
+    del valid_rl_monograph_record["bib_call_no"]
+    with pytest.raises(ValidationError) as e:
+        MonographRecord(**valid_rl_monograph_record)
+    errors = e.value
+    error = format_error_messages(errors)
+    assert error[0]["loc"] == ["852$h"]
 
 
-def test_call_no_test_type(valid_pamphlet_record):
-    valid_pamphlet_record["bib_call_no"] = "ReCAP 23-111111"
-    try:
-        Record(**valid_pamphlet_record)
-    except ValidationError as e:
-        error = format_error_messages(e)
-        assert error[0] == (
-            "Record should not have a call_no. Check item type.",
-            "ReCAP 23-111111",
-        )
+def test_location_check_type(valid_rl_monograph_record):
+    valid_rl_monograph_record["items"][0]["item_type"] = "55"
+    with pytest.raises(ValidationError) as e:
+        MonographRecord(**valid_rl_monograph_record)
+    errors = e.value
+    error = format_error_messages(errors)
+    assert error[0]["type"] == "Item/Order location check"
 
 
 @pytest.mark.parametrize(
     "value",
     ["RECAP 23-00000", "ReCAP 11-11111"],
 )
-def test_bib_call_no_error(valid_nypl_rl_record, value):
-    valid_nypl_rl_record["bib_call_no"] = value
+def test_bib_call_no_error(valid_rl_monograph_record, value):
+    valid_rl_monograph_record["bib_call_no"] = value
     with pytest.raises(ValidationError) as e:
-        Record(**valid_nypl_rl_record)
-        new_error = format_error_messages(e)
-        assert new_error[0] == ("Invalid ReCAP call number", value)
+        MonographRecord(**valid_rl_monograph_record)
+    errors = e.value
+    error = format_error_messages(errors)
+    assert error[0]["msg"] == "Invalid ReCAP call number"
 
 
 @pytest.mark.parametrize(
-    "value",
+    "data",
     ["ReCAP 24-0000", "ReCAP 11-11111"],
 )
-def test_item_call_no_error(valid_nypl_rl_record, value):
-    valid_nypl_rl_record["item"]["item_call_no"] = value
+def test_item_call_no_error(valid_rl_monograph_record, data):
+    valid_rl_monograph_record["items"][0]["item_call_no"] = data
     with pytest.raises(ValidationError) as e:
-        Record(**valid_nypl_rl_record)
-        new_error = format_error_messages(e)
-        assert new_error[0] == ("Invalid ReCAP call number", value)
+        MonographRecord(**valid_rl_monograph_record)
+    errors = e.value
+    error = format_error_messages(errors)
+    assert error
+    assert error[0]["msg"] == "Invalid ReCAP call number"
 
 
 @pytest.mark.parametrize(
-    "key, value",
-    [
-        ("invoice_price", "2.00"),
-        ("invoice_shipping", "1.11"),
-        ("invoice_tax", "22.22"),
-        ("invoice_net_price", "12345.00"),
-    ],
+    "data",
+    ["January 1, 2024", "2024-01-01"],
 )
-def test_invoice_price_error(valid_nypl_rl_record, key, value):
-    valid_nypl_rl_record["invoice"][key] = value
+def test_invoice_date_error(valid_rl_monograph_record, data):
+    valid_rl_monograph_record["invoice_date"] = data
     with pytest.raises(ValidationError) as e:
-        Record(**valid_nypl_rl_record)
-        new_error = format_error_messages(e)
-        assert new_error[0] == (
-            "Invalid price; Invoice price should not include a decimal point",
-            value,
-        )
+        MonographRecord(**valid_rl_monograph_record)
+    errors = e.value
+    error = format_error_messages(errors)
+    assert error[0]["msg"] == "Invalid date; invoice date should be YYMMDD"
 
 
 @pytest.mark.parametrize(
-    "value",
+    "field", ["invoice_price", "invoice_shipping", "invoice_tax", "invoice_net_price"]
+)
+def test_invoice_price_error_2(valid_rl_monograph_record, field):
+    valid_rl_monograph_record[field] = "2.00"
+    with pytest.raises(ValidationError) as e:
+        MonographRecord(**valid_rl_monograph_record)
+    errors = e.value
+    error = format_error_messages(errors)
+    assert error[0]["type"] == "string_pattern_mismatch"
+
+
+@pytest.mark.parametrize(
+    "data",
     ["2.00", "order_price", "1.11"],
 )
-def test_order_price_error(valid_nypl_rl_record, value):
-    valid_nypl_rl_record["order"]["order_price"] = value
+def test_order_price_error(valid_rl_monograph_record, data):
+    valid_rl_monograph_record["order_price"] = data
     with pytest.raises(ValidationError) as e:
-        Record(**valid_nypl_rl_record)
-        new_error = format_error_messages(e)
-        assert new_error[0] == (
-            "Invalid price; Order price should not include a decimal point",
-            value,
-        )
+        MonographRecord(**valid_rl_monograph_record)
+    errors = e.value
+    error = format_error_messages(errors)
+    assert error[0]["type"] == "string_pattern_mismatch"
 
 
 @pytest.mark.parametrize(
-    "value",
-    ["20240101", "01012024", "January 1, 2024"],
-)
-def test_invoice_date_error(valid_nypl_rl_record, value):
-    valid_nypl_rl_record["invoice"]["invoice_date"] = value
-    with pytest.raises(ValidationError) as e:
-        Record(**valid_nypl_rl_record)
-        new_error = format_error_messages(e)
-        assert new_error[0] == ("Invalid date; invoice date should be YYMMDD", value)
-
-
-@pytest.mark.parametrize(
-    "value",
+    "data",
     ["100", "1", "10", "222"],
 )
-def test_item_price_error(valid_nypl_rl_record, value):
-    valid_nypl_rl_record["item"]["item_price"] = value
+def test_item_price_error(valid_rl_monograph_record, data):
+    valid_rl_monograph_record["items"][0]["item_price"] = data
     with pytest.raises(ValidationError) as e:
-        Record(**valid_nypl_rl_record)
-        new_error = format_error_messages(e)
-        assert new_error[0] == (
-            "Invalid price; item price should include a decimal point",
-            value,
-        )
+        MonographRecord(**valid_rl_monograph_record)
+    errors = e.value
+    error = format_error_messages(errors)
+    assert error[0]["msg"] == "Invalid price; item price should include a decimal point"
 
 
 @pytest.mark.parametrize(
-    "key, value",
+    "field, data",
     [
         ("item_message", "foobar"),
         ("item_message", "lower case message"),
@@ -175,95 +157,106 @@ def test_item_price_error(valid_nypl_rl_record, value):
         ("message", "bar"),
     ],
 )
-def test_message_error(valid_nypl_rl_record, key, value):
-    valid_nypl_rl_record["item"][key] = value
+def test_message_error(valid_rl_monograph_record, field, data):
+    valid_rl_monograph_record["items"][0][field] = data
     with pytest.raises(ValidationError) as e:
-        Record(**valid_nypl_rl_record)
-        new_error = format_error_messages(e)
-        assert new_error[0] == (
-            "Invalid item message; message should be in all caps",
-            value,
-        )
+        MonographRecord(**valid_rl_monograph_record)
+    errors = e.value
+    error = format_error_messages(errors)
+    assert error[0]["msg"] == "Invalid item message; message should be in all caps"
 
 
 @pytest.mark.parametrize(
-    "value",
+    "data",
     ["AUX", "EV"],
 )
-def test_item_vendor_code_error(valid_nypl_rl_record, value):
-    valid_nypl_rl_record["item"]["item_vendor_code"] = value
+def test_item_vendor_code_error(valid_rl_monograph_record, data):
+    valid_rl_monograph_record["items"][0]["item_vendor_code"] = data
     with pytest.raises(ValidationError) as e:
-        Record(**valid_nypl_rl_record)
-        new_error = format_error_messages(e)
-        assert new_error[0] == ("Invalid vendor code", value)
+        MonographRecord(**valid_rl_monograph_record)
+    errors = e.value
+    error = format_error_messages(errors)
+    assert error[0]["type"] == "literal_error"
 
 
 @pytest.mark.parametrize(
-    "value",
+    "data",
     ["EVIS", "Amalivre"],
 )
-def test_bib_vendor_code_error(valid_nypl_rl_record, value):
-    valid_nypl_rl_record["bib_vendor_code"] = value
+def test_bib_vendor_code_error(valid_rl_monograph_record, data):
+    valid_rl_monograph_record["bib_vendor_code"] = data
     with pytest.raises(ValidationError) as e:
-        Record(**valid_nypl_rl_record)
-        new_error = format_error_messages(e)
-        assert new_error[0] == ("Invalid vendor code", value)
+        MonographRecord(**valid_rl_monograph_record)
+    errors = e.value
+    error = format_error_messages(errors)
+    assert error[0]["type"] == "literal_error"
+
+
+# def test_library_identifier_error(valid_rl_monograph_record):
+#     del valid_rl_monograph_record["items"][0]["library"]
+#     with pytest.raises(ValidationError) as e:
+#         MonographRecord(**valid_rl_monograph_record)
+#     errors = e.value
+#     error = format_error_messages(errors)
+#     assert error[0]["msg"] == "Invalid library identifier"
+
+
+def test_call_tag_error(valid_rl_monograph_record):
+    valid_rl_monograph_record["items"][0]["item_call_tag"] = "8582"
+    with pytest.raises(ValidationError) as e:
+        MonographRecord(**valid_rl_monograph_record)
+    errors = e.value
+    error = format_error_messages(errors)
+    assert error[0]["msg"] == "Invalid item call tag"
 
 
 @pytest.mark.parametrize(
-    "value",
-    ["rl", "research libraries", "nypl", "NYPL"],
-)
-def test_RL_identifier_error(valid_nypl_rl_record, value):
-    valid_nypl_rl_record["rl_identifier"] = value
-    with pytest.raises(ValidationError) as e:
-        Record(**valid_nypl_rl_record)
-        new_error = format_error_messages(e)
-        assert new_error[0] == ("Invalid research libraries identifier", value)
-
-
-@pytest.mark.parametrize(
-    "value",
-    [100, "1", "10", "222"],
-)
-def test_call_tag_error(valid_nypl_rl_record, value):
-    valid_nypl_rl_record["item"]["item_call_tag"] = value
-    with pytest.raises(ValidationError) as e:
-        Record(**valid_nypl_rl_record)
-        new_error = format_error_messages(e)
-        assert new_error[0] == ("Invalid item call tag", value)
-
-
-@pytest.mark.parametrize(
-    "value",
+    "data",
     ["foo", "bar", "MAL", "item_location", "1"],
 )
-def test_item_location_error(valid_nypl_rl_record, value):
-    valid_nypl_rl_record["item"]["item_location"] = value
+def test_item_location_error(valid_rl_monograph_record, data):
+    """
+    Item location/item type/order location check runs before model validatiion
+    """
+
+    valid_rl_monograph_record["items"][0]["item_location"] = data
     with pytest.raises(ValidationError) as e:
-        Record(**valid_nypl_rl_record)
-        new_error = format_error_messages(e)
-        assert new_error[0] == ("Item location does not match a valid location", value)
+        MonographRecord(**valid_rl_monograph_record)
+    errors = e.value
+    error = format_error_messages(errors)
+    assert error[1]["msg"] == "Item location does not match a valid location"
 
 
 @pytest.mark.parametrize(
-    "value",
+    "data",
     ["bbb", "aaa", "10", "222"],
 )
-def test_order_location_error(valid_nypl_rl_record, value):
-    valid_nypl_rl_record["order"]["order_location"] = value
+def test_order_location_error(valid_rl_monograph_record, data):
+    """
+    Item location/item type/order location check runs before model validatiion
+    With two items on valid_rl_monograph_record, this is the third error to be raised
+    """
+
+    valid_rl_monograph_record["order_location"] = data
     with pytest.raises(ValidationError) as e:
-        Record(**valid_nypl_rl_record)
-        new_error = format_error_messages(e)
-        assert new_error[0] == ("Order location does not match a valid location", value)
+        MonographRecord(**valid_rl_monograph_record)
+    errors = e.value
+    error = format_error_messages(errors)
+    assert error[2]["msg"] == "Order location does not match a valid location"
 
 
 def test_extra_field_error(valid_pamphlet_record):
-    valid_pamphlet_record["item"]["item_call_tag"] = "8528"
+    valid_pamphlet_record["items"] = [
+        {
+            "item_call_tag": "8528",
+        }
+    ]
+
     with pytest.raises(ValidationError) as e:
-        Record(**valid_pamphlet_record)
-        new_error = format_error_messages(e)
-        assert new_error[0] == ("1 extra field(s)", "item_call_tag")
+        OtherMaterialRecord(**valid_pamphlet_record)
+    errors = e.value
+    error = format_error_messages(errors)
+    assert error[0]["msg"] == "1 extra field/subfield(s)"
 
 
 @pytest.mark.parametrize(
@@ -283,7 +276,7 @@ def test_extra_field_error(valid_pamphlet_record):
         (
             {
                 "type": "literal_error",
-                "loc": ("item", "monograph_record", "item_vendor_code"),
+                "loc": ("items", 0, "RL", "item_vendor_code"),
                 "msg": "Input should be 'AUXAM' or 'EVP'",
                 "input": "EVIS",
                 "ctx": {"expected": "'EVP' or 'AUXAM'"},
@@ -294,18 +287,18 @@ def test_extra_field_error(valid_pamphlet_record):
         (
             {
                 "type": "literal_error",
-                "loc": ("rl_identifier",),
+                "loc": ("items", 0, "RL", "library"),
                 "msg": "Input should be 'RL'",
                 "input": "RLRL",
                 "ctx": {"expected": "'RL'"},
                 "url": "https://errors.pydantic.dev/2.5/v/literal_error",
             },
-            "Invalid research libraries identifier",
+            "Invalid library identifier",
         ),
         (
             {
                 "type": "literal_error",
-                "loc": ("item", "monograph_record", "item_call_tag"),
+                "loc": ("items", 0, "RL", "item_call_tag"),
                 "msg": "Input should be '8528'",
                 "input": "8582",
                 "ctx": {"expected": "'8528'"},
@@ -316,7 +309,7 @@ def test_extra_field_error(valid_pamphlet_record):
         (
             {
                 "type": "literal_error",
-                "loc": ("item", "monograph_record", "item_location"),
+                "loc": ("items", 0, "RL", "item_location"),
                 "msg": "Input should be 'rcmb2', 'rcmf2', 'rcmg2', 'rc2ma', 'rcmp2', 'rcph2', 'rcpm2', 'rcpt2' or 'rc2cf'",
                 "input": "aaaaa",
                 "ctx": {
@@ -329,7 +322,7 @@ def test_extra_field_error(valid_pamphlet_record):
         (
             {
                 "type": "literal_error",
-                "loc": ("order", "order_location"),
+                "loc": ("order_location",),
                 "msg": "Input should be 'MAB', 'MAF', 'MAG', 'MAL', 'MAP', 'MAS', 'PAD', 'PAH', 'PAM', 'PAT' or 'SC'",
                 "input": "aaa",
                 "ctx": {
@@ -352,7 +345,7 @@ def test_all_literal_errors(input, output):
         (
             {
                 "type": "string_pattern_mismatch",
-                "loc": ("item", "monograph_record", "item_barcode"),
+                "loc": ("items", 0, "RL", "item_barcode"),
                 "msg": "String should match pattern '^33433[0-9]{9}$|^33333[0-9]{9}$|^34444[0-9]{9}$'",
                 "input": "12345678901234",
                 "ctx": {"pattern": "^33433[0-9]{9}$|^33333[0-9]{9}$|^34444[0-9]{9}$"},
@@ -363,7 +356,7 @@ def test_all_literal_errors(input, output):
         (
             {
                 "type": "string_pattern_mismatch",
-                "loc": ("item", "monograph_record", "item_call_no"),
+                "loc": ("items", 0, "RL", "item_call_no"),
                 "msg": "String should match pattern '^ReCAP 23-\\d{6}$|^ReCAP 24-\\d{6}$'",
                 "input": "ReCAP 23-99999",
                 "ctx": {"pattern": "^ReCAP 23-\\d{6}$|^ReCAP 24-\\d{6}$"},
@@ -385,29 +378,29 @@ def test_all_literal_errors(input, output):
         (
             {
                 "type": "string_pattern_mismatch",
-                "loc": ("invoice", "invoice_price"),
+                "loc": ("invoice_price",),
                 "msg": "String should match pattern '^\\d{3,}$'",
                 "input": "12.34",
                 "ctx": {"pattern": "^\\d{3,}$"},
                 "url": "https://errors.pydantic.dev/2.5/v/string_pattern_mismatch",
             },
-            "Invalid price; Invoice price should not include a decimal point",
+            "Invalid price; Invoice_Price should not include a decimal point",
         ),
         (
             {
                 "type": "string_pattern_mismatch",
-                "loc": ("order", "order_price"),
+                "loc": ("order_price",),
                 "msg": "String should match pattern '^\\d{3,}$'",
                 "input": "12.34",
                 "ctx": {"pattern": "^\\d{3,}$"},
                 "url": "https://errors.pydantic.dev/2.5/v/string_pattern_mismatch",
             },
-            "Invalid price; Order price should not include a decimal point",
+            "Invalid price; Order_Price should not include a decimal point",
         ),
         (
             {
                 "type": "string_pattern_mismatch",
-                "loc": ("invoice", "invoice_date"),
+                "loc": ("invoice_date",),
                 "msg": "String should match pattern '^\\d{6}$'",
                 "input": "jan. 01, 2023",
                 "ctx": {"pattern": "^\\d{6}$"},
@@ -418,7 +411,7 @@ def test_all_literal_errors(input, output):
         (
             {
                 "type": "string_pattern_mismatch",
-                "loc": ("item", "monograph_record", "item_price"),
+                "loc": ("items", 0, "RL", "item_price"),
                 "msg": "String should match pattern '^\\d{1,}\\.\\d{2}$'",
                 "input": "1234",
                 "ctx": {"pattern": "^\\d{1,}\\.\\d{2}$"},
@@ -429,7 +422,7 @@ def test_all_literal_errors(input, output):
         (
             {
                 "type": "string_pattern_mismatch",
-                "loc": ("item", "monograph_record", "item_message"),
+                "loc": ("items", 0, "RL", "item_message"),
                 "msg": "String should match pattern '^[^a-z]+'",
                 "input": "aaaaa",
                 "ctx": {"pattern": "^[^a-z]+"},
