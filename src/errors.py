@@ -15,9 +15,9 @@ def string_errors(error):
      - error message: str
     """
     if "items" in error["loc"]:
-        loc = (f"item_{error["loc"][1]}", RLMarcEncoding[error["loc"][-1]].value)
+        loc = (f"item_{error['loc'][1]}", RLMarcEncoding[error["loc"][-1]].value)
     else:
-        loc = (RLMarcEncoding[error["loc"][-1]].value)
+        loc = RLMarcEncoding[error["loc"][-1]].value
     new_error = {
         "type": error["type"],
         "loc": loc,
@@ -32,7 +32,9 @@ def string_errors(error):
             new_error["msg"] = "Invalid barcode"
             return new_error
         case (
-            "string_pattern_mismatch", _, {"pattern": "^ReCAP 23-\\d{6}$|^ReCAP 24-\\d{6}$"},
+            "string_pattern_mismatch",
+            _,
+            {"pattern": "^ReCAP 23-\\d{6}$|^ReCAP 24-\\d{6}$"},
         ):
             new_error["msg"] = "Invalid ReCAP call number"
             return new_error
@@ -83,9 +85,9 @@ def literal_errors(error):
      - error message: str
     """
     if "items" in error["loc"]:
-        loc = (f"item_{error["loc"][1]}", RLMarcEncoding[error["loc"][-1]].value)
+        loc = (f"item_{error['loc'][1]}", RLMarcEncoding[error["loc"][-1]].value)
     else:
-        loc = (RLMarcEncoding[error["loc"][-1]].value)
+        loc = RLMarcEncoding[error["loc"][-1]].value
     new_error = {
         "type": error["type"],
         "loc": loc,
@@ -147,21 +149,32 @@ def other_errors(error):
     if error["type"] == "extra_forbidden":
         if "items" in error["loc"]:
             item_number = 0
-            new_error["loc"] = (f"item_{item_number}", RLMarcEncoding[error["loc"][-1]].value)
+            new_error["loc"] = (
+                f"item_{item_number}",
+                RLMarcEncoding[error["loc"][-1]].value,
+            )
             item_number = +1
         else:
-            new_error["loc"] = (RLMarcEncoding[error["loc"][-1]].value)
+            new_error["loc"] = RLMarcEncoding[error["loc"][-1]].value
     elif error["type"] == "missing":
         if "items" in error["loc"]:
             item_number = 0
-            new_error["loc"] = (f"item_{item_number}", RLMarcEncoding[error["loc"][-1]].value)
+            new_error["loc"] = (
+                f"item_{item_number}",
+                RLMarcEncoding[error["loc"][-1]].value,
+            )
             item_number += 1
         else:
-            new_error["loc"] = (RLMarcEncoding[error["loc"][-1]].value)
+            new_error["loc"] = RLMarcEncoding[error["loc"][-1]].value
     elif error["type"] == "Item/Order location check":
-        new_error["loc"] = (f"item_{error["loc"][0]}", {RLMarcEncoding[error["loc"][1]].value}, {RLMarcEncoding[error["loc"][2]].value}, {RLMarcEncoding[error["loc"][3]].value})
+        new_error["loc"] = (
+            f"item_{error['loc'][0]}",
+            {RLMarcEncoding[error["loc"][1]].value},
+            {RLMarcEncoding[error["loc"][2]].value},
+            {RLMarcEncoding[error["loc"][3]].value},
+        )
     else:
-        new_error["loc"] = (RLMarcEncoding[error["loc"][-1]].value)
+        new_error["loc"] = RLMarcEncoding[error["loc"][-1]].value
     return new_error
 
 
@@ -203,12 +216,22 @@ def format_error_messages(e: ValidationError) -> List:
     missing_field_count = len(missing_field_list)
     extra_field_count = len(extra_field_list)
     if missing_field_count > 0:
-        missing_field_error = {"type": "missing", "loc": missing_field_list, "input": missing_field_list, "msg": f"{missing_field_count} missing field/subfield(s)"}
+        missing_field_error = {
+            "type": "missing",
+            "loc": missing_field_list,
+            "input": missing_field_list,
+            "msg": f"{missing_field_count} missing field/subfield(s)",
+        }
         errors.append(missing_field_error)
     else:
         pass
     if extra_field_count > 0:
-        extra_field_error = {"type": "extra_forbidden", "loc": extra_field_list, "input": extra_field_list, "msg": f"{extra_field_count} extra field/subfield(s)"}
+        extra_field_error = {
+            "type": "extra_forbidden",
+            "loc": extra_field_list,
+            "input": extra_field_list,
+            "msg": f"{extra_field_count} extra field/subfield(s)",
+        }
         errors.append(extra_field_error)
     else:
         pass
