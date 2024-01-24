@@ -15,7 +15,7 @@ class RLMarcEncoding(Enum):
     invoice_copies = "980$g"
     order_price = "960$s"
     order_location = "960$t"
-    order_fund = "960$s"
+    order_fund = "960$u"
     item_call_tag = "949$z"
     item_call_no = "949$a"
     item_barcode = "949$i"
@@ -67,15 +67,17 @@ def get_material_type(record):
     physical_desc = record.physicaldescription
     field_300a = physical_desc[0].get_subfields("a")
     split_300a = field_300a[0].split()
-    series = record.get("490")
     if "Catalogues Raisonnes" in subject_subfield_list:
         return "catalogue_raissonne"
     elif "Catalogue Raissonne" in subject_subfield_list:
         return "catalogue_raissonne"
     elif "pages" in split_300a[1]:
-        pages = int(split_300a[0])
-        if pages < 50:
-            return "pamphlet"
+        try:
+            pages = int(split_300a[0])
+            if pages < 50:
+                return "pamphlet"
+        except ValueError:
+            pass
     elif "volumes" in split_300a[1]:
         return "multipart"
     else:
@@ -105,13 +107,14 @@ def get_record_input(record):
         "order_price": get_field_subfield(record, "960", "s"),
         "order_location": get_field_subfield(record, "960", "t"),
         "order_fund": get_field_subfield(record, "960", "u"),
+        "library": library,
     }
     record_input = {
         key: val for key, val in record_data.items() if type(val) is not KeyError
     }
-    if record_data["material_type"] == "monograph_record":
-        items = record.get_fields("949")
-        item_list = []
+    items = record.get_fields("949")
+    item_list = []
+    if items:
         for item in items:
             item_output = {
                 "item_call_tag": item.get("z"),
@@ -128,8 +131,9 @@ def get_record_input(record):
                 key: val for key, val in item_output.items() if val is not None
             }
             item_list.append(edited_item)
-        record_input["items"] = item_list
+    record_input["items"] = item_list
+    if record_data["material_type"] == "monograph_record":
+        del record_input["library"]
         return record_input
     else:
-        record_input["library"] = library
         return record_input

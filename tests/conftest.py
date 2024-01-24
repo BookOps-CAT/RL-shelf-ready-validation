@@ -75,7 +75,7 @@ def valid_pamphlet_record():
 def string_barcode_error():
     string_barcode_error = {
         "type": "string_pattern_mismatch",
-        "loc": ("item", "monograph_record", "item_barcode"),
+        "loc": ("items", 0, "RL", "item_barcode"),
         "msg": "String should match pattern '^33433[0-9]{9}$|^33333[0-9]{9}$|^34444[0-9]{9}$'",
         "input": "12345678901234",
         "ctx": {"pattern": "^33433[0-9]{9}$|^33333[0-9]{9}$|^34444[0-9]{9}$"},
@@ -88,7 +88,7 @@ def string_barcode_error():
 def vendor_code_error():
     vendor_code_error = {
         "type": "literal_error",
-        "loc": ("item", "monograph_record", "item_vendor_code"),
+        "loc": ("items", 0, "RL", "item_barcode"),
         "msg": "Input should be 'EVP' or 'AUXAM'",
         "input": "EVIS",
         "ctx": {"expected": "'EVP' or 'AUXAM'"},

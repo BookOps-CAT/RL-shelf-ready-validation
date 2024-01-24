@@ -65,17 +65,20 @@ def validate_records(file):
     while True:
         for record in reader:
             n += 1
+            control_number = record["001"].data
             converted_record = get_record_input(record)
             record_type = get_material_type(record)
             if record_type == "monograph_record":
                 try:
                     MonographRecord(**converted_record)
-                    console.print(f"Record #{n} is valid.")
+                    console.print(
+                        f"\n\n[record_number]Record #{n}[/] (control_no [control_no]{control_number}[/]) is valid."
+                    )
                 except ValidationError as e:
                     formatted_errors = format_error_messages(e)
                     error_count = e.error_count()
                     console.print(
-                        f"Record [marc_record]#{n}[/] contains [error_count]{error_count} error(s)[/]"
+                        f"\n\nRecord [marc_record]#{n}[/] contains [error_count]{error_count} error(s)[/]"
                     )
                     for error in formatted_errors:
                         if error["input"] == error["loc"]:
@@ -85,15 +88,18 @@ def validate_records(file):
                             console.print(
                                 f"\t{error['msg']}: {error['input']} {error['loc']}"
                             )
+
             else:
                 try:
                     OtherMaterialRecord(**converted_record)
-                    console.print(f"Record #{n} is valid.")
+                    console.print(
+                        f"\n\n[record_number]Record #{n}[/] (control_no [control_no]{control_number}[/]) is valid."
+                    )
                 except ValidationError as e:
                     formatted_errors = format_error_messages(e)
                     error_count = e.error_count()
                     console.print(
-                        f"Record [marc_record]#{n}[/] contains [error_count]{error_count} error(s)[/]"
+                        f"\n\nRecord [marc_record]#{n}[/] contains [error_count]{error_count} error(s)[/]"
                     )
                     for error in formatted_errors:
                         if error["input"] == error["loc"]:
@@ -119,19 +125,19 @@ def validate_all(file):
         for record in reader:
             n += 1
             control_number = record["001"].data
-            console.print(
-                f"\n\n[record_number]Record #{n}[/] (control_no [control_no]{control_number}[/])"
-            )
             record_input = get_record_input(record)
             record_type = get_material_type(record)
             if record_type == "monograph_record":
                 try:
                     MonographRecord(**record_input)
+                    console.print(
+                        f"\n\n[record_number]Record #{n}[/] (control_no [control_no]{control_number}[/]) is valid."
+                    )
                 except ValidationError as e:
                     formatted_errors = format_error_messages(e)
                     error_count = e.error_count()
                     console.print(
-                        f"Record contains [error_count]{error_count} error(s)[/]:"
+                        f"\n\nRecord [marc_record]#{n}[/] contains [error_count]{error_count} error(s)[/]"
                     )
                     for error in formatted_errors:
                         if error["input"] == error["loc"]:
@@ -141,16 +147,23 @@ def validate_all(file):
                             console.print(
                                 f"\t{error['msg']}: {error['input']} {error['loc']}"
                             )
+
             else:
                 try:
                     OtherMaterialRecord(**record_input)
+                    console.print(
+                        f"\n\n[record_number]Record #{n}[/] (control_no [control_no]{control_number}[/]) is valid."
+                    )
                 except ValidationError as e:
                     formatted_errors = format_error_messages(e)
                     error_count = e.error_count()
                     console.print(
-                        f"Record contains [error_count]{error_count} error(s)[/]:"
+                        f"\n\nRecord [marc_record]#{n}[/] contains [error_count]{error_count} error(s)[/]"
                     )
                     for error in formatted_errors:
+                        if error["type"] == "union_tag_invalid":
+                            console.print(error)
+                            break
                         if error["input"] == error["loc"]:
                             console.print(f"\t{error['msg']}: {error['loc']}")
 
