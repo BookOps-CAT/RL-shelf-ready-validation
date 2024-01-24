@@ -1,3 +1,2 @@
 # RL Shelf Ready Record Validation
-
-Parse MARC records and check if metadata conforms to specifications
+A validation tool to read and review MARC records provided by vendors.

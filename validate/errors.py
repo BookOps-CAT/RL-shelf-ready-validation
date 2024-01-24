@@ -1,5 +1,5 @@
 from pydantic import ValidationError
-from src.translate import RLMarcEncoding
+from validate.translate import RLMarcEncoding
 from typing import List
 
 

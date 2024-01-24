@@ -1,4 +1,4 @@
-from src.translate import read_marc_records, get_record_input, get_field_subfield
+from validate.translate import read_marc_records, get_record_input
 from pymarc import Field, Subfield
 import pytest
 

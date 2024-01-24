@@ -1,12 +1,15 @@
 [tool.poetry]
-name = "src"
+name = "validate"
 version = "0.1.0"
-description = ""
+description = "A validator for vendor MARC records"
 authors = ["Charlotte Kostelic <charlottekostelic@gmail.com>"]
 readme = "README.md"
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["validate"]
+
+[tool.poetry.scripts]
+validate = "validate:main"
 
 [tool.poetry.dependencies]
 python = "^3.10"

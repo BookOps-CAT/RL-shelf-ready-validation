@@ -1,12 +1,11 @@
 import click
-from src.models import MonographRecord, OtherMaterialRecord
-from src.errors import format_error_messages
-from src.translate import (
+from validate.models import MonographRecord, OtherMaterialRecord
+from validate.errors import format_error_messages
+from validate.translate import (
     read_marc_records,
     get_material_type,
     get_record_input,
 )
-
 from pydantic import ValidationError
 from rich.console import Console
 from rich.theme import Theme
@@ -22,13 +21,24 @@ console = Console(tab_size=5, theme=theme)
 
 
 @click.group()
+@click.option(
+    "-f",
+    "--file",
+    prompt="File",
+    help="Path to file you would like to read or validate.",
+)
 def cli():
+    """
+    A program that reads and validates MARC records from vendors
+    """
     pass
 
 
-@cli.command("read-records-as-marc")
-@click.option("-f", "--file", prompt=True)
-def read_records_as_marc(file):
+@cli.command("read_marc")
+def read_marc(file):
+    """
+    Read MARC records and print in terminal
+    """
     records = read_marc_records(file)
     n = 0
     while True:
@@ -42,8 +52,10 @@ def read_records_as_marc(file):
 
 
 @cli.command("read-records")
-@click.option("-f", "--file", prompt=True)
-def read_records_as_input(file):
+def read_records(file):
+    """
+    Print converted MARC in terminal
+    """
     records = read_marc_records(file)
     n = 0
     while True:
@@ -58,8 +70,10 @@ def read_records_as_input(file):
 
 
 @cli.command("validate-records")
-@click.option("-f", "--file", prompt=True)
 def validate_records(file):
+    """
+    Read and validate records one-by-one
+    """
     reader = read_marc_records(file)
     n = 0
     while True:
@@ -115,8 +129,10 @@ def validate_records(file):
 
 
 @cli.command("validate-all")
-@click.option("-f", "--file", prompt=True)
 def validate_all(file):
+    """
+    Validate all records in a file
+    """
     reader = read_marc_records(file)
     n = 0
     while True:
@@ -173,3 +189,7 @@ def validate_all(file):
                             )
         console.print("Finished checking records.")
         break
+
+
+def main():
+    cli()
