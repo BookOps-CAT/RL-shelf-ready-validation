@@ -5,9 +5,7 @@ from contextlib import nullcontext as does_not_raise
 from shelf_ready_validator.errors import (
     format_error_messages,
     match_errors,
-    item_order_errors,
     extra_errors,
-    missing_errors,
 )
 
 
