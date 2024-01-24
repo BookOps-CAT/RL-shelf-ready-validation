@@ -4,9 +4,10 @@ from src.models import MonographRecord, OtherMaterialRecord
 from contextlib import nullcontext as does_not_raise
 from src.errors import (
     format_error_messages,
-    literal_errors,
-    string_errors,
-    other_errors,
+    match_errors,
+    item_order_errors,
+    extra_errors,
+    missing_errors,
 )
 
 
@@ -192,13 +193,13 @@ def test_bib_vendor_code_error(valid_rl_monograph_record, data):
     assert error[0]["type"] == "literal_error"
 
 
-# def test_library_identifier_error(valid_rl_monograph_record):
-#     del valid_rl_monograph_record["items"][0]["library"]
-#     with pytest.raises(ValidationError) as e:
-#         MonographRecord(**valid_rl_monograph_record)
-#     errors = e.value
-#     error = format_error_messages(errors)
-#     assert error[0]["msg"] == "Invalid library identifier"
+def test_item_union_error(valid_rl_monograph_record):
+    valid_rl_monograph_record["items"][0]["library"] = "NYPL"
+    with pytest.raises(ValidationError) as e:
+        MonographRecord(**valid_rl_monograph_record)
+    errors = e.value
+    error = format_error_messages(errors)
+    assert error[0]["type"] == "union_tag_invalid"
 
 
 def test_call_tag_error(valid_rl_monograph_record):
@@ -262,6 +263,22 @@ def test_extra_field_error(valid_pamphlet_record):
 @pytest.mark.parametrize(
     "input, output",
     [
+        (
+            {
+                "type": "literal_error",
+                "loc": (
+                    "items",
+                    0,
+                    "RL",
+                    "item_agency",
+                ),
+                "msg": "Input should be '43'",
+                "input": "44",
+                "ctx": {"expected": "'43'"},
+                "url": "https://errors.pydantic.dev/2.5/v/literal_error",
+            },
+            "Invalid item agency code",
+        ),
         (
             {
                 "type": "literal_error",
@@ -332,16 +349,6 @@ def test_extra_field_error(valid_pamphlet_record):
             },
             "Order location does not match a valid location",
         ),
-    ],
-)
-def test_all_literal_errors(input, output):
-    new_error = literal_errors(input)
-    assert new_error["msg"] == output
-
-
-@pytest.mark.parametrize(
-    "input, output",
-    [
         (
             {
                 "type": "string_pattern_mismatch",
@@ -384,18 +391,7 @@ def test_all_literal_errors(input, output):
                 "ctx": {"pattern": "^\\d{3,}$"},
                 "url": "https://errors.pydantic.dev/2.5/v/string_pattern_mismatch",
             },
-            "Invalid price; Invoice_Price should not include a decimal point",
-        ),
-        (
-            {
-                "type": "string_pattern_mismatch",
-                "loc": ("order_price",),
-                "msg": "String should match pattern '^\\d{3,}$'",
-                "input": "12.34",
-                "ctx": {"pattern": "^\\d{3,}$"},
-                "url": "https://errors.pydantic.dev/2.5/v/string_pattern_mismatch",
-            },
-            "Invalid price; Order_Price should not include a decimal point",
+            "Invalid price; price should not include a decimal point",
         ),
         (
             {
@@ -432,21 +428,21 @@ def test_all_literal_errors(input, output):
         ),
     ],
 )
-def test_all_string_errors(input, output):
-    new_error = string_errors(input)
+def test_match_errors(input, output):
+    new_error = match_errors(input)
     assert new_error["msg"] == output
 
 
-def test_string_error_pass(vendor_code_error):
+def test_literal_error_pass(vendor_code_error):
     with does_not_raise():
-        string_errors(vendor_code_error)
+        match_errors(vendor_code_error)
 
 
-def test_literal_error_pass(string_barcode_error):
+def test_string_error_pass(string_barcode_error):
     with does_not_raise():
-        literal_errors(string_barcode_error)
+        match_errors(string_barcode_error)
 
 
 def test_extra_field_error_pass(vendor_code_error):
     with does_not_raise():
-        other_errors(vendor_code_error)
+        extra_errors(vendor_code_error)
