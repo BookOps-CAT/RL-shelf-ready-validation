@@ -1,15 +1,14 @@
 import click
-from pydantic import ValidationError
-from rich.console import Console
-from rich.theme import Theme
-
-from shelf_ready_validator.models import MonographRecord, OtherMaterialRecord
-from shelf_ready_validator.errors import format_error_messages
-from shelf_ready_validator.translate import (
+from validate.models import MonographRecord, OtherMaterialRecord
+from validate.errors import format_error_messages
+from validate.translate import (
     read_marc_records,
     get_material_type,
     get_record_input,
 )
+from pydantic import ValidationError
+from rich.console import Console
+from rich.theme import Theme
 
 theme = Theme(
     {
@@ -81,11 +80,11 @@ def validate_records(file):
         for record in reader:
             n += 1
             control_number = record["001"].data
-            record_input = get_record_input(record)
+            converted_record = get_record_input(record)
             record_type = get_material_type(record)
             if record_type == "monograph_record":
                 try:
-                    MonographRecord(**record_input)
+                    MonographRecord(**converted_record)
                     console.print(
                         f"\n\n[record_number]Record #{n}[/] (control_no [control_no]{control_number}[/]) is valid."
                     )
@@ -106,7 +105,7 @@ def validate_records(file):
 
             else:
                 try:
-                    OtherMaterialRecord(**record_input)
+                    OtherMaterialRecord(**converted_record)
                     console.print(
                         f"\n\n[record_number]Record #{n}[/] (control_no [control_no]{control_number}[/]) is valid."
                     )

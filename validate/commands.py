@@ -1,15 +1,15 @@
 import click
-from pydantic import ValidationError
-from rich.console import Console
-from rich.theme import Theme
-
-from shelf_ready_validator.models import MonographRecord, OtherMaterialRecord
-from shelf_ready_validator.errors import format_error_messages
-from shelf_ready_validator.translate import (
+from validate.models import MonographRecord, OtherMaterialRecord
+from validate.errors import format_error_messages
+from validate.translate import (
     read_marc_records,
     get_material_type,
     get_record_input,
 )
+
+from pydantic import ValidationError
+from rich.console import Console
+from rich.theme import Theme
 
 theme = Theme(
     {
@@ -22,24 +22,13 @@ console = Console(tab_size=5, theme=theme)
 
 
 @click.group()
-@click.option(
-    "-f",
-    "--file",
-    prompt="File",
-    help="Path to file you would like to read or validate.",
-)
 def cli():
-    """
-    A program that reads and validates MARC records from vendors
-    """
     pass
 
 
-@cli.command("read_marc")
-def read_marc(file):
-    """
-    Read MARC records and print in terminal
-    """
+@cli.command("read-records-as-marc")
+@click.option("-f", "--file", prompt=True)
+def read_records_as_marc(file):
     records = read_marc_records(file)
     n = 0
     while True:
@@ -53,10 +42,8 @@ def read_marc(file):
 
 
 @cli.command("read-records")
-def read_records(file):
-    """
-    Print converted MARC in terminal
-    """
+@click.option("-f", "--file", prompt=True)
+def read_records_as_input(file):
     records = read_marc_records(file)
     n = 0
     while True:
@@ -71,21 +58,19 @@ def read_records(file):
 
 
 @cli.command("validate-records")
+@click.option("-f", "--file", prompt=True)
 def validate_records(file):
-    """
-    Read and validate records one-by-one
-    """
     reader = read_marc_records(file)
     n = 0
     while True:
         for record in reader:
             n += 1
             control_number = record["001"].data
-            record_input = get_record_input(record)
+            converted_record = get_record_input(record)
             record_type = get_material_type(record)
             if record_type == "monograph_record":
                 try:
-                    MonographRecord(**record_input)
+                    MonographRecord(**converted_record)
                     console.print(
                         f"\n\n[record_number]Record #{n}[/] (control_no [control_no]{control_number}[/]) is valid."
                     )
@@ -106,7 +91,7 @@ def validate_records(file):
 
             else:
                 try:
-                    OtherMaterialRecord(**record_input)
+                    OtherMaterialRecord(**converted_record)
                     console.print(
                         f"\n\n[record_number]Record #{n}[/] (control_no [control_no]{control_number}[/]) is valid."
                     )
@@ -130,10 +115,8 @@ def validate_records(file):
 
 
 @cli.command("validate-all")
+@click.option("-f", "--file", prompt=True)
 def validate_all(file):
-    """
-    Validate all records in a file
-    """
     reader = read_marc_records(file)
     n = 0
     while True:
@@ -190,7 +173,3 @@ def validate_all(file):
                             )
         console.print("Finished checking records.")
         break
-
-
-def main():
-    cli()
