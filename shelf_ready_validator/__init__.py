@@ -142,6 +142,12 @@ def validate_records(file):
 
 
 @cli.command("validate-all")
+@click.option(
+    "-f",
+    "--file",
+    prompt="File",
+    help="Path to file you would like to read or validate.",
+)
 def validate_all(file):
     """
     Validate all records in a file

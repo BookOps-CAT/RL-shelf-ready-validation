@@ -3,7 +3,7 @@ black==23.12.1 ; python_version >= "3.10" and python_version < "4.0"
 bookops-marc @ git+https://github.com/BookOps-CAT/bookops-marc@fb0118501ded1610b8e6bc8a19bde91933e54d9c ; python_version >= "3.10" and python_version < "4.0"
 click==8.1.7 ; python_version >= "3.10" and python_version < "4.0"
 colorama==0.4.6 ; python_version >= "3.10" and python_version < "4.0" and (platform_system == "Windows" or sys_platform == "win32")
-coverage[toml]==7.4.0 ; python_version >= "3.10" and python_version < "4.0"
+coverage[toml]==7.4.1 ; python_version >= "3.10" and python_version < "4.0"
 exceptiongroup==1.2.0 ; python_version >= "3.10" and python_version < "3.11"
 iniconfig==2.0.0 ; python_version >= "3.10" and python_version < "4.0"
 markdown-it-py==3.0.0 ; python_version >= "3.10" and python_version < "4.0"
