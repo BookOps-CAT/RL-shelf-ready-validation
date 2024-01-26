@@ -1,5 +1,6 @@
-from bookops_marc import SierraBibReader
 from enum import Enum
+
+from bookops_marc import SierraBibReader
 
 
 class RLMarcEncoding(Enum):

@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 from contextlib import nullcontext as does_not_raise
-from src.models import ItemNYPLRL, ItemNYPLBL, ItemBPL
+from shelf_ready_validator.models import ItemNYPLRL, ItemNYPLBL, ItemBPL
 
 
 def test_call_tag_valid():
