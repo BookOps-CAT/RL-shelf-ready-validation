@@ -1,6 +1,7 @@
 [tool.poetry]
 name = "shelf-ready-validator"
 version = "0.1.0"
+license = "MIT"
 description = "A validator for vendor MARC records"
 authors = ["Charlotte Kostelic <charlottekostelic@gmail.com>"]
 readme = "README.md"
@@ -38,4 +39,24 @@ source = ["."]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
-[tool.mypy]
+[tool.black]
+line-length = 88
+target-version = ['py310']
+include = '\.pyi?$'
+exclude = '''
+(
+    /(
+        \.eggs
+       | \.git
+       | \.hg
+       | \.mypy_cache
+       | \.tox
+       | \.venv
+       | _build
+       | buck-out
+       | build
+       | dist
+    )/
+    | temp.py
+)
+'''
