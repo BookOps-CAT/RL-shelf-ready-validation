@@ -29,7 +29,7 @@ def cli():
     pass
 
 
-@cli.command("read_marc")
+@cli.command("read-marc")
 @click.option(
     "-f",
     "--file",
@@ -142,12 +142,6 @@ def validate_records(file):
 
 
 @cli.command("validate-all")
-@click.option(
-    "-f",
-    "--file",
-    prompt="File",
-    help="Path to file you would like to read or validate.",
-)
 def validate_all(file):
     """
     Validate all records in a file
