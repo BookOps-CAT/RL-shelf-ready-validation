@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "shelf-ready-validator"
 version = "0.1.0"
-description = ""
+description = "A validator for vendor MARC records"
 authors = ["Charlotte Kostelic <charlottekostelic@gmail.com>"]
 readme = "README.md"
 
