@@ -1,15 +1,15 @@
 import click
-from src.models import MonographRecord, OtherMaterialRecord
-from src.errors import format_error_messages
-from src.translate import (
+from pydantic import ValidationError
+from rich.console import Console
+from rich.theme import Theme
+
+from shelf_ready_validator.models import MonographRecord, OtherMaterialRecord
+from shelf_ready_validator.errors import format_error_messages
+from shelf_ready_validator.translate import (
     read_marc_records,
     get_material_type,
     get_record_input,
 )
-
-from pydantic import ValidationError
-from rich.console import Console
-from rich.theme import Theme
 
 theme = Theme(
     {
@@ -173,3 +173,7 @@ def validate_all(file):
                             )
         console.print("Finished checking records.")
         break
+
+
+def main():
+    cli()

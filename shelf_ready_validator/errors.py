@@ -1,6 +1,7 @@
-from pydantic import ValidationError
-from src.translate import RLMarcEncoding
 from typing import List
+
+from pydantic import ValidationError
+from shelf_ready_validator.translate import RLMarcEncoding
 
 
 def missing_errors(error):

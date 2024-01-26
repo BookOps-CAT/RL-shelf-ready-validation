@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 from contextlib import nullcontext as does_not_raise
-from src.models import MonographRecord, OtherMaterialRecord
+from shelf_ready_validator.models import MonographRecord, OtherMaterialRecord
 
 
 def test_monograph_record_valid(valid_rl_monograph_record):

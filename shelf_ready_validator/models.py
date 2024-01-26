@@ -1,5 +1,6 @@
-from pydantic import BaseModel, Field, ConfigDict, ValidationError, model_validator
 from typing import Literal, Optional, Annotated, Union, List
+
+from pydantic import BaseModel, Field, ConfigDict, ValidationError, model_validator
 from pydantic_core import InitErrorDetails, PydanticCustomError
 
 

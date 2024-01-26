@@ -1,8 +1,8 @@
 import pytest
 from pydantic import ValidationError
-from src.models import MonographRecord, OtherMaterialRecord
+from shelf_ready_validator.models import MonographRecord, OtherMaterialRecord
 from contextlib import nullcontext as does_not_raise
-from src.errors import (
+from shelf_ready_validator.errors import (
     format_error_messages,
     match_errors,
     item_order_errors,

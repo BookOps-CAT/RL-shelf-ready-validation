@@ -1,12 +1,12 @@
 [tool.poetry]
-name = "src"
+name = "shelf-ready-validator"
 version = "0.1.0"
 description = ""
 authors = ["Charlotte Kostelic <charlottekostelic@gmail.com>"]
 readme = "README.md"
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["shelf_ready_validator"]
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -23,6 +23,9 @@ pytest = "^7.4.3"
 pytest-cov = "^4.1.0"
 mypy = "^1.8.0"
 black = "^23.12.1"
+
+[tool.poetry.scripts]
+validator = "shelf_ready_validator:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
