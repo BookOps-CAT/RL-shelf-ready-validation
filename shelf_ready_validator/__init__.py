@@ -22,12 +22,6 @@ console = Console(tab_size=5, theme=theme)
 
 
 @click.group()
-@click.option(
-    "-f",
-    "--file",
-    prompt="File",
-    help="Path to file you would like to read or validate.",
-)
 def cli():
     """
     A program that reads and validates MARC records from vendors
@@ -36,6 +30,12 @@ def cli():
 
 
 @cli.command("read_marc")
+@click.option(
+    "-f",
+    "--file",
+    prompt="File",
+    help="Path to file you would like to read or validate.",
+)
 def read_marc(file):
     """
     Read MARC records and print in terminal
@@ -53,6 +53,12 @@ def read_marc(file):
 
 
 @cli.command("read-records")
+@click.option(
+    "-f",
+    "--file",
+    prompt="File",
+    help="Path to file you would like to read or validate.",
+)
 def read_records(file):
     """
     Print converted MARC in terminal
@@ -71,6 +77,12 @@ def read_records(file):
 
 
 @cli.command("validate-records")
+@click.option(
+    "-f",
+    "--file",
+    prompt="File",
+    help="Path to file you would like to read or validate.",
+)
 def validate_records(file):
     """
     Read and validate records one-by-one
@@ -130,6 +142,12 @@ def validate_records(file):
 
 
 @cli.command("validate-all")
+@click.option(
+    "-f",
+    "--file",
+    prompt="File",
+    help="Path to file you would like to read or validate.",
+)
 def validate_all(file):
     """
     Validate all records in a file
