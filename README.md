@@ -38,5 +38,5 @@ The following information is also available using `validator --help`
    * Validates all records in a file and prints output to terminal.
  * `validator validate-brief`
    * Validates all records in a file and prints summary of errors to terminal.
- * `validator validate-record`
-   * Validates records one-by-one. Prints results of validation and, if applicable, a list of errors identified in the record 
+
+Commands can also be chained to run together on the same file. For example, `validator read validate-brief` will read each MARC record and print it to the terminal and when it has finished printing each record it will print a validation summary. Similarly, `validator read validate-all` will read a MARC record, print the record to the terminal, validate the MARC record and print the error output to the terminal.
