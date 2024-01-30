@@ -23,19 +23,20 @@ This tool currently validates EOD to ensure vendors provide consistent order and
 
 ### Usage
 `validator` provides a command line interface to view and validate MARC records
-Users will be prompted to input a file to be read by the tool. `validator` can read .mrc files.
+Users will be prompted to input a file to be read by the tool. This tool can read .mrc files.
 
 
 #### Commands
 The following information is also available using `validator --help`
 
-`validator read`
- * Read and print MARC records one-by-one to terminal
-`validator read-input`
- * Convert records and print to terminal. Records are converted to a dict in order to be read by the validator
-`validator validate-all`
- * Validates all records in a file and prints output to terminal.
-`validator validate-brief`
- * Validates all records in a file and prints summary of errors to terminal.
-`validator validate-record`
- * Validates records one-by-one. Prints results of validation and, if applicable, a list of errors identified in the record 
+
+ * `validator read`
+   * Read and print MARC records one-by-one to terminal
+ * `validator read-input`
+   * Convert records and print to terminal. Records are converted to a dict in order to be read by the validator
+ * `validator validate-all`
+   * Validates all records in a file and prints output to terminal.
+ * `validator validate-brief`
+   * Validates all records in a file and prints summary of errors to terminal.
+ * `validator validate-record`
+   * Validates records one-by-one. Prints results of validation and, if applicable, a list of errors identified in the record 
