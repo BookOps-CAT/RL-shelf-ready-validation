@@ -9,7 +9,8 @@ from shelf_ready_validator.models import MonographRecord, OtherMaterialRecord
 from shelf_ready_validator.errors import format_errors, format_error_summary
 from shelf_ready_validator.translate import (
     get_material_type,
-    get_record_input, read_marc_records
+    get_record_input,
+    read_marc_records,
 )
 
 theme = Theme(
@@ -126,7 +127,9 @@ def validate_all(reader):
                 try:
                     MonographRecord(**record_input)
                     out_report["valid"] = True
-                    console.print(f"\n[record]Record #{n}[/] (control_no [control_no]{record['001'].data}[/]) is valid.")
+                    console.print(
+                        f"\n[record]Record #{n}[/] (control_no [control_no]{record['001'].data}[/]) is valid."
+                    )
                 except ValidationError as e:
                     out_report["valid"] = False
                     out_report["error_count"] = str(e.error_count())
@@ -138,17 +141,25 @@ def validate_all(reader):
                     formatted_errors = format_errors(e)
                     for error in formatted_errors:
                         if error["type"] == "missing":
-                            console.print(f"\t{error["count"]} {error['msg']}: {error['loc']}")
+                            console.print(
+                                f"\t{error['count']} {error['msg']}: {error['loc']}"
+                            )
                         elif error["type"] == "extra_forbidden":
-                            console.print(f"\t{error["count"]} {error['msg']}: {error['loc']}")
+                            console.print(
+                                f"\t{error['count']} {error['msg']}: {error['loc']}"
+                            )
                         else:
-                            console.print(f"\t{error['msg']}: {error['input']} {error['loc']}")
+                            console.print(
+                                f"\t{error['msg']}: {error['input']} {error['loc']}"
+                            )
                 output.append(out_report)
             else:
                 try:
                     OtherMaterialRecord(**record_input)
                     out_report["valid"] = True
-                    console.print(f"\n[record]Record #{n}[/] (control_no [control_no]{record['001'].data}[/]) is valid.")
+                    console.print(
+                        f"\n[record]Record #{n}[/] (control_no [control_no]{record['001'].data}[/]) is valid."
+                    )
                 except ValidationError as e:
                     out_report["valid"] = False
                     out_report["error_count"] = e.error_count()
@@ -160,11 +171,17 @@ def validate_all(reader):
                     formatted_errors = format_errors(e)
                     for error in formatted_errors:
                         if error["type"] == "missing":
-                            console.print(f"\t{error["count"]} {error['msg']}: {error['loc']}")
+                            console.print(
+                                f"\t{error['count']} {error['msg']}: {error['loc']}"
+                            )
                         elif error["type"] == "extra_forbidden":
-                            console.print(f"\t{error["count"]} {error['msg']}: {error['loc']}")
+                            console.print(
+                                f"\t{error['count']} {error['msg']}: {error['loc']}"
+                            )
                         else:
-                            console.print(f"\t{error['msg']}: {error['input']} {error['loc']}")
+                            console.print(
+                                f"\t{error['msg']}: {error['input']} {error['loc']}"
+                            )
                 output.append(out_report)
         yield output
         break
