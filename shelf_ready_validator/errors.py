@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict
 
 from pydantic import ValidationError
 from shelf_ready_validator.translate import RLMarcEncoding
@@ -98,6 +98,18 @@ def match_errors(error):
     match (error["type"], error["ctx"]):
         case (
             "literal_error",
+            {"expected": " "},
+        ):
+            error["msg"] = "Invalid indicator"
+            return error
+        case (
+            "literal_error",
+            {"expected": "1"},
+        ):
+            error["msg"] = "Invalid indicator"
+            return error
+        case (
+            "literal_error",
             {"expected": "'EVP' or 'AUXAM'"},
         ):
             error["msg"] = "Invalid vendor code"
@@ -174,7 +186,7 @@ def match_errors(error):
     return error
 
 
-def format_error_messages(e: ValidationError) -> List:
+def format_errors(e: ValidationError) -> List:
     """
     A function to convert a list of errors based on error type
     returns error["loc"] values with MARC tags
@@ -203,26 +215,104 @@ def format_error_messages(e: ValidationError) -> List:
                     extra_fields.append(loc)
         elif error["type"] == "Item/Order location check":
             converted_error = item_order_errors(error)
+            converted_error["count"] = 1
             errors.append(converted_error)
         else:
             converted_error = match_errors(error)
+            converted_error["count"] = 1
             errors.append(converted_error)
+    missing_fields[:] = (
+        value
+        for value in missing_fields
+        if value not in ("852_ind1", "852_ind2", "949_ind1", "949_ind2")
+    )
     missing_field_count = len(missing_fields)
+    extra_fields[:] = (
+        value
+        for value in extra_fields
+        if value not in ("852_ind1", "852_ind2", "949_ind1", "949_ind2")
+    )
     extra_field_count = len(extra_fields)
     if len(missing_fields) > 0:
         missing_field_error = {
+            "count": missing_field_count,
             "type": "missing",
             "loc": missing_fields,
             "input": missing_fields,
-            "msg": f"{missing_field_count} missing field/subfield(s)",
+            "msg": "missing field/subfield(s)",
         }
         errors.append(missing_field_error)
     if len(extra_fields) > 0:
         extra_field_error = {
+            "count": extra_field_count,
             "type": "extra_forbidden",
             "loc": extra_fields,
             "input": extra_fields,
-            "msg": f"{extra_field_count} extra field/subfield(s)",
+            "msg": "extra field/subfield(s)",
         }
         errors.append(extra_field_error)
     return errors
+
+
+def format_error_summary(e: ValidationError) -> Dict:
+    """
+    A function to convert a list of errors based on error type
+    returns summary of errors based on type values with MARC tags
+
+    Returns a dicts containing
+     - missing_field_count:
+     - missing_fields:
+     - extra_field_count:
+     - extra_fields:
+     - invalid_field_count:
+     - invalid_fields:
+     - combination_error_count:
+     - combination_errors:
+
+    """
+    missing_fields = []
+    extra_fields = []
+    invalid_fields = []
+    other_errors = []
+    other_error_fields = []
+    for error in e.errors():
+        if error["type"] == "missing":
+            converted_error = missing_errors(error)
+            missing_fields.append(converted_error["loc"])
+        elif error["type"] == "extra_forbidden":
+            converted_error = extra_errors(error)
+            if type(converted_error["loc"]) is str:
+                extra_fields.append(converted_error["loc"])
+            else:
+                for loc in converted_error["loc"]:
+                    extra_fields.append(loc)
+        elif error["type"] == "Item/Order location check":
+            converted_error = item_order_errors(error)
+            other_errors.append("Check item and order data; combination is not valid.")
+            other_error_fields.append(converted_error["loc"])
+        elif error["type"] == "union_tag_invalid":
+            other_errors.append("Unable to validate item record; invalid 910$a")
+        else:
+            converted_error = match_errors(error)
+            invalid_fields.append(converted_error["loc"])
+    missing_fields[:] = (
+        value
+        for value in missing_fields
+        if value not in ("852_ind1", "852_ind2", "949_ind1", "949_ind2")
+    )
+    extra_fields[:] = (
+        value
+        for value in extra_fields
+        if value not in ("852_ind1", "852_ind2", "949_ind1", "949_ind2")
+    )
+    error_summary = {
+        "missing_field_count": str(len(missing_fields)),
+        "missing_fields": missing_fields,
+        "extra_field_count": str(len(extra_fields)),
+        "extra_fields": extra_fields,
+        "invalid_field_count": str(len(invalid_fields)),
+        "invalid_fields": invalid_fields,
+        "other_errors": other_errors,
+        "other_error_fields": other_error_fields,
+    }
+    return error_summary

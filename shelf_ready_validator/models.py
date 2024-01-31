@@ -23,7 +23,9 @@ class ItemBPL(BaseModel):
     item_agency: str
     item_location: str
     item_type: str
-    library: Literal["BPL"]
+    library: Annotated[Literal["BPL"], Field(...)]
+    item_ind1: Literal[" "]
+    item_ind2: Literal["1"]
 
 
 class ItemNYPLBL(BaseModel):
@@ -45,7 +47,9 @@ class ItemNYPLBL(BaseModel):
     item_agency: str
     item_location: str
     item_type: str
-    library: Literal["BL"]
+    library: Annotated[Literal["BL"], Field(...)]
+    item_ind1: Literal[" "]
+    item_ind2: Literal["1"]
 
 
 class ItemNYPLRL(BaseModel):
@@ -84,6 +88,8 @@ class ItemNYPLRL(BaseModel):
     ]
     item_type: str = Field(...)
     library: Annotated[Literal["RL"], Field(...)]
+    item_ind1: Literal[" "]
+    item_ind2: Literal["1"]
 
 
 Item = Annotated[
@@ -108,6 +114,8 @@ class MonographRecord(BaseModel):
 
     material_type: Literal["monograph_record"]
     bib_call_no: Annotated[str, Field(pattern=r"^ReCAP 23-\d{6}$|^ReCAP 24-\d{6}$")]
+    bib_call_no_ind1: Literal["8"]
+    bib_call_no_ind2: Literal[" "]
     bib_vendor_code: Literal["EVP", "AUXAM"]
     lcc: str
     invoice_date: Annotated[str, Field(pattern=r"^\d{6}$")]
@@ -122,6 +130,8 @@ class MonographRecord(BaseModel):
         "MAB", "MAF", "MAG", "MAL", "MAP", "MAS", "PAD", "PAH", "PAM", "PAT", "SC"
     ]
     order_fund: str
+    order_ind1: Literal[" "]
+    order_ind2: Literal[" "]
     items: List[Item]
 
     @model_validator(mode="wrap")
@@ -226,10 +236,9 @@ class MonographRecord(BaseModel):
 class OtherMaterialRecord(BaseModel):
     """
     a class to define a valid MARC record for non-monograph types including:
-     - Catalogues Raissones
+     - Catalogues Raissonnes
      - Performing Arts - Dance materials
      - Multivolume monographs
-     - Incomplete sets
      - Pamphlets
      - Materials with non-standard binding or packaging
 
@@ -240,7 +249,7 @@ class OtherMaterialRecord(BaseModel):
     )
     material_type: Literal[
         "catalogue_raissonne",
-        "performing_arts_dance",
+        "dance",
         "multipart",
         "pamphlet",
         "non-standard_binding_packaging",
@@ -259,4 +268,6 @@ class OtherMaterialRecord(BaseModel):
         "MAB", "MAF", "MAG", "MAL", "MAP", "MAS", "PAD", "PAH", "PAM", "PAT", "SC"
     ]
     order_fund: str
+    order_ind1: Literal[" "]
+    order_ind2: Literal[" "]
     library: Literal["RL", "BPL", "BL"]

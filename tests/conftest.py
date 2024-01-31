@@ -7,6 +7,8 @@ from pymarc import Field, Subfield
 def valid_rl_monograph_record():
     valid_rl_monograph_record = {
         "material_type": "monograph_record",
+        "bib_call_no_ind1": "8",
+        "bib_call_no_ind2": " ",
         "bib_call_no": "ReCAP 23-999999",
         "bib_vendor_code": "EVP",
         "lcc": "Z123",
@@ -20,6 +22,8 @@ def valid_rl_monograph_record():
         "order_price": "200",
         "order_location": "MAB",
         "order_fund": "123456apprv",
+        "order_ind1": " ",
+        "order_ind2": " ",
         "items": [
             {
                 "item_call_tag": "8528",
@@ -33,6 +37,8 @@ def valid_rl_monograph_record():
                 "item_message": "FOO",
                 "message": "BAR",
                 "library": "RL",
+                "item_ind1": " ",
+                "item_ind2": "1",
             },
             {
                 "item_call_tag": "8528",
@@ -44,6 +50,8 @@ def valid_rl_monograph_record():
                 "item_type": "2",
                 "item_agency": "43",
                 "library": "RL",
+                "item_ind1": " ",
+                "item_ind2": "1",
             },
         ],
     }
@@ -66,6 +74,8 @@ def valid_pamphlet_record():
         "order_price": "200",
         "order_location": "MAB",
         "order_fund": "123456apprv",
+        "order_ind1": " ",
+        "order_ind2": " ",
         "library": "RL",
     }
     return valid_pamphlet_record
@@ -162,7 +172,7 @@ def stub_record():
     bib.add_field(
         Field(
             tag="852",
-            indicators=["8", ""],
+            indicators=["8", " "],
             subfields=[
                 Subfield(code="h", value="ReCAP 23-100000"),
             ],
@@ -171,7 +181,7 @@ def stub_record():
     bib.add_field(
         Field(
             tag="901",
-            indicators=["", ""],
+            indicators=["", " "],
             subfields=[
                 Subfield(code="a", value="EVP"),
             ],
@@ -180,7 +190,7 @@ def stub_record():
     bib.add_field(
         Field(
             tag="910",
-            indicators=["", ""],
+            indicators=[" ", " "],
             subfields=[
                 Subfield(code="a", value="RL"),
             ],
