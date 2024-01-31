@@ -3,7 +3,7 @@ from pydantic import ValidationError
 from shelf_ready_validator.models import MonographRecord, OtherMaterialRecord
 from contextlib import nullcontext as does_not_raise
 from shelf_ready_validator.errors import (
-    format_error_messages,
+    format_errors,
     match_errors,
     extra_errors,
 )
@@ -29,8 +29,8 @@ def test_extra_field_types(valid_pamphlet_record):
     with pytest.raises(ValidationError) as e:
         OtherMaterialRecord(**valid_pamphlet_record)
     errors = e.value
-    error = format_error_messages(errors)
-    assert error[0]["msg"] == "1 extra field/subfield(s)"
+    error = format_errors(errors)
+    assert error[0]["msg"] == "extra field/subfield(s)"
 
 
 def test_literal_error_types(valid_rl_monograph_record):
@@ -38,7 +38,7 @@ def test_literal_error_types(valid_rl_monograph_record):
     with pytest.raises(ValidationError) as e:
         MonographRecord(**valid_rl_monograph_record)
     errors = e.value
-    error = format_error_messages(errors)
+    error = format_errors(errors)
     assert error[0]["msg"] == "Invalid item call tag"
 
 
@@ -47,8 +47,8 @@ def test_missing_item_fields(valid_rl_monograph_record):
     with pytest.raises(ValidationError) as e:
         MonographRecord(**valid_rl_monograph_record)
     errors = e.value
-    error = format_error_messages(errors)
-    assert error[0]["msg"] == "1 missing field/subfield(s)"
+    error = format_errors(errors)
+    assert error[0]["msg"] == "missing field/subfield(s)"
 
 
 def test_missing_other_fields(valid_rl_monograph_record):
@@ -56,7 +56,7 @@ def test_missing_other_fields(valid_rl_monograph_record):
     with pytest.raises(ValidationError) as e:
         MonographRecord(**valid_rl_monograph_record)
     errors = e.value
-    error = format_error_messages(errors)
+    error = format_errors(errors)
     assert error[0]["loc"] == ["852$h"]
 
 
@@ -65,7 +65,7 @@ def test_location_check_type(valid_rl_monograph_record):
     with pytest.raises(ValidationError) as e:
         MonographRecord(**valid_rl_monograph_record)
     errors = e.value
-    error = format_error_messages(errors)
+    error = format_errors(errors)
     assert error[0]["type"] == "Item/Order location check"
 
 
@@ -78,7 +78,7 @@ def test_bib_call_no_error(valid_rl_monograph_record, value):
     with pytest.raises(ValidationError) as e:
         MonographRecord(**valid_rl_monograph_record)
     errors = e.value
-    error = format_error_messages(errors)
+    error = format_errors(errors)
     assert error[0]["msg"] == "Invalid ReCAP call number"
 
 
@@ -91,7 +91,7 @@ def test_item_call_no_error(valid_rl_monograph_record, data):
     with pytest.raises(ValidationError) as e:
         MonographRecord(**valid_rl_monograph_record)
     errors = e.value
-    error = format_error_messages(errors)
+    error = format_errors(errors)
     assert error
     assert error[0]["msg"] == "Invalid ReCAP call number"
 
@@ -105,7 +105,7 @@ def test_invoice_date_error(valid_rl_monograph_record, data):
     with pytest.raises(ValidationError) as e:
         MonographRecord(**valid_rl_monograph_record)
     errors = e.value
-    error = format_error_messages(errors)
+    error = format_errors(errors)
     assert error[0]["msg"] == "Invalid date; invoice date should be YYMMDD"
 
 
@@ -117,7 +117,7 @@ def test_invoice_price_error_2(valid_rl_monograph_record, field):
     with pytest.raises(ValidationError) as e:
         MonographRecord(**valid_rl_monograph_record)
     errors = e.value
-    error = format_error_messages(errors)
+    error = format_errors(errors)
     assert error[0]["type"] == "string_pattern_mismatch"
 
 
@@ -130,7 +130,7 @@ def test_order_price_error(valid_rl_monograph_record, data):
     with pytest.raises(ValidationError) as e:
         MonographRecord(**valid_rl_monograph_record)
     errors = e.value
-    error = format_error_messages(errors)
+    error = format_errors(errors)
     assert error[0]["type"] == "string_pattern_mismatch"
 
 
@@ -143,7 +143,7 @@ def test_item_price_error(valid_rl_monograph_record, data):
     with pytest.raises(ValidationError) as e:
         MonographRecord(**valid_rl_monograph_record)
     errors = e.value
-    error = format_error_messages(errors)
+    error = format_errors(errors)
     assert error[0]["msg"] == "Invalid price; item price should include a decimal point"
 
 
@@ -161,7 +161,7 @@ def test_message_error(valid_rl_monograph_record, field, data):
     with pytest.raises(ValidationError) as e:
         MonographRecord(**valid_rl_monograph_record)
     errors = e.value
-    error = format_error_messages(errors)
+    error = format_errors(errors)
     assert error[0]["msg"] == "Invalid item message; message should be in all caps"
 
 
@@ -174,7 +174,7 @@ def test_item_vendor_code_error(valid_rl_monograph_record, data):
     with pytest.raises(ValidationError) as e:
         MonographRecord(**valid_rl_monograph_record)
     errors = e.value
-    error = format_error_messages(errors)
+    error = format_errors(errors)
     assert error[0]["type"] == "literal_error"
 
 
@@ -187,7 +187,7 @@ def test_bib_vendor_code_error(valid_rl_monograph_record, data):
     with pytest.raises(ValidationError) as e:
         MonographRecord(**valid_rl_monograph_record)
     errors = e.value
-    error = format_error_messages(errors)
+    error = format_errors(errors)
     assert error[0]["type"] == "literal_error"
 
 
@@ -196,7 +196,7 @@ def test_item_union_error(valid_rl_monograph_record):
     with pytest.raises(ValidationError) as e:
         MonographRecord(**valid_rl_monograph_record)
     errors = e.value
-    error = format_error_messages(errors)
+    error = format_errors(errors)
     assert error[0]["type"] == "union_tag_invalid"
 
 
@@ -205,7 +205,7 @@ def test_call_tag_error(valid_rl_monograph_record):
     with pytest.raises(ValidationError) as e:
         MonographRecord(**valid_rl_monograph_record)
     errors = e.value
-    error = format_error_messages(errors)
+    error = format_errors(errors)
     assert error[0]["msg"] == "Invalid item call tag"
 
 
@@ -222,7 +222,7 @@ def test_item_location_error(valid_rl_monograph_record, data):
     with pytest.raises(ValidationError) as e:
         MonographRecord(**valid_rl_monograph_record)
     errors = e.value
-    error = format_error_messages(errors)
+    error = format_errors(errors)
     assert error[1]["msg"] == "Item location does not match a valid location"
 
 
@@ -240,7 +240,7 @@ def test_order_location_error(valid_rl_monograph_record, data):
     with pytest.raises(ValidationError) as e:
         MonographRecord(**valid_rl_monograph_record)
     errors = e.value
-    error = format_error_messages(errors)
+    error = format_errors(errors)
     assert error[2]["msg"] == "Order location does not match a valid location"
 
 
@@ -254,8 +254,8 @@ def test_extra_field_error(valid_pamphlet_record):
     with pytest.raises(ValidationError) as e:
         OtherMaterialRecord(**valid_pamphlet_record)
     errors = e.value
-    error = format_error_messages(errors)
-    assert error[0]["msg"] == "1 extra field/subfield(s)"
+    error = format_errors(errors)
+    assert error[0]["msg"] == "extra field/subfield(s)"
 
 
 @pytest.mark.parametrize(

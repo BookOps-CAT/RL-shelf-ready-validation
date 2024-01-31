@@ -4,7 +4,13 @@ from bookops_marc import SierraBibReader
 
 
 class RLMarcEncoding(Enum):
+    """
+    A class to translate fields used in the validator to MARC fields/subfields
+    """
+
     bib_call_no = "852$h"
+    bib_call_no_ind1 = "852_ind1"
+    bib_call_no_ind2 = "852_ind2"
     bib_vendor_code = "901$a"
     lcc = "050$a"
     invoice_date = "980$a"
@@ -17,6 +23,8 @@ class RLMarcEncoding(Enum):
     order_price = "960$s"
     order_location = "960$t"
     order_fund = "960$u"
+    order_ind1 = "960_ind1"
+    order_ind2 = "960_ind2"
     item_call_tag = "949$z"
     item_call_no = "949$a"
     item_barcode = "949$i"
@@ -28,12 +36,14 @@ class RLMarcEncoding(Enum):
     item_location = "949$l"
     item_type = "949$t"
     library = "910$a"
+    item_ind1 = "949_ind1"
+    item_ind2 = "949_ind2"
     items = "949"
 
 
 def read_marc_records(file):
     """
-    Reads
+    Reads .mrc file and returns a record
     """
     with open(file, "rb") as fh:
         reader = SierraBibReader(fh)
@@ -45,6 +55,7 @@ def get_field_subfield(record, f, s):
     """
     Gets value of subfield and returns it to be assigned to a variable
     if subfield does not exist, returns KeyError
+    KeyError can be stripped out before reading input into validator
     """
     try:
         field_subfield = record[f][s]
@@ -55,7 +66,8 @@ def get_field_subfield(record, f, s):
 
 def get_material_type(record):
     """
-    get material type to determine which model to use when validating a record
+    Reads record data to determine material type
+    Validator chooses model to validate against based on material type
 
     this function needs to be built out more
     """
@@ -96,6 +108,8 @@ def get_record_input(record):
     record_data = {
         "material_type": get_material_type(record),
         "bib_call_no": get_field_subfield(record, "852", "h"),
+        "bib_call_no_ind1": record.get("852").indicator1,
+        "bib_call_no_ind2": record.get("852").indicator2,
         "bib_vendor_code": get_field_subfield(record, "901", "a"),
         "lcc": get_field_subfield(record, "050", "a"),
         "invoice_date": get_field_subfield(record, "980", "a"),
@@ -108,6 +122,8 @@ def get_record_input(record):
         "order_price": get_field_subfield(record, "960", "s"),
         "order_location": get_field_subfield(record, "960", "t"),
         "order_fund": get_field_subfield(record, "960", "u"),
+        "order_ind1": record.get("960").indicator1,
+        "order_ind2": record.get("960").indicator2,
         "library": library,
     }
     record_input = {
@@ -127,6 +143,8 @@ def get_record_input(record):
                 "item_location": item.get("l"),
                 "item_type": item.get("t"),
                 "library": library,
+                "item_ind1": item.indicator1,
+                "item_ind2": item.indicator2,
             }
             edited_item = {
                 key: val for key, val in item_output.items() if val is not None

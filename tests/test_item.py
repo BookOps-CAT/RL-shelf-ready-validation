@@ -15,6 +15,8 @@ def test_call_tag_valid():
             item_agency="43",
             item_location="rcmb2",
             item_type="2",
+            item_ind1=" ",
+            item_ind2="1",
             library="RL",
         )
 
@@ -30,6 +32,8 @@ def test_call_tag_invalid():
             item_agency="43",
             item_location="rcmb2",
             item_type="2",
+            item_ind1=" ",
+            item_ind2="1",
             library="RL",
         )
     assert e.value.errors()[0]["type"] == "literal_error"
@@ -46,6 +50,8 @@ def test_call_no_valid():
             item_agency="43",
             item_location="rcmb2",
             item_type="2",
+            item_ind1=" ",
+            item_ind2="1",
             library="RL",
         )
 
@@ -61,6 +67,8 @@ def test_call_no_invalid():
             item_agency="43",
             item_location="rcmb2",
             item_type="2",
+            item_ind1=" ",
+            item_ind2="1",
             library="RL",
         )
     assert e.value.errors()[0]["type"] == "string_pattern_mismatch"
@@ -85,6 +93,8 @@ def test_barcode_valid(barcode, library, item_model):
             item_agency="43",
             item_location="rcmb2",
             item_type="2",
+            item_ind1=" ",
+            item_ind2="1",
             library=library,
         )
 
@@ -108,6 +118,8 @@ def test_barcode_invalid(barcode, library, item_model):
             item_agency="43",
             item_location="rcmb2",
             item_type="2",
+            item_ind1=" ",
+            item_ind2="1",
             library=library,
         )
     assert e.value.errors()[0]["type"] == "string_pattern_mismatch"
@@ -139,6 +151,8 @@ def test_item_location_valid(item_location):
             item_agency="43",
             item_location=item_location,
             item_type="2",
+            item_ind1=" ",
+            item_ind2="1",
             library="RL",
         )
 
@@ -158,6 +172,8 @@ def test_item_location_invalid(item_location):
             item_agency="43",
             item_location=item_location,
             item_type="2",
+            item_ind1=" ",
+            item_ind2="1",
             library="RL",
         )
     assert e.value.errors()[0]["type"] == "literal_error"
@@ -178,6 +194,8 @@ def test_item_vendor_code_valid(item_vendor_code):
             item_agency="43",
             item_location="rcmb2",
             item_type="2",
+            item_ind1=" ",
+            item_ind2="1",
             library="RL",
         )
 
@@ -197,6 +215,8 @@ def test_item_vendor_code_invalid(item_vendor_code):
             item_agency="43",
             item_location="rcmb2",
             item_type="2",
+            item_ind1=" ",
+            item_ind2="1",
             library="RL",
         )
     assert e.value.errors()[0]["type"] == "literal_error"
@@ -213,6 +233,8 @@ def test_item_agency_valid():
             item_agency="43",
             item_location="rcmb2",
             item_type="2",
+            item_ind1=" ",
+            item_ind2="1",
             library="RL",
         )
 
@@ -228,6 +250,8 @@ def test_item_agency_invalid():
             item_agency=43,
             item_location="rcmb2",
             item_type="2",
+            item_ind1=" ",
+            item_ind2="1",
             library="RL",
         )
     assert e.value.errors()[0]["type"] == "literal_error"
