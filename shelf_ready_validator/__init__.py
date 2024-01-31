@@ -126,7 +126,7 @@ def validate_all(reader):
                 try:
                     MonographRecord(**record_input)
                     out_report["valid"] = True
-                    console.print(f"\n[record]Record #{n}[/] (control_no [control_no]{record["001"].data}[/]) is valid.")
+                    console.print(f"\n[record]Record #{n}[/] (control_no [control_no]{record['001'].data}[/]) is valid.")
                 except ValidationError as e:
                     out_report["valid"] = False
                     out_report["error_count"] = str(e.error_count())
@@ -148,7 +148,7 @@ def validate_all(reader):
                 try:
                     OtherMaterialRecord(**record_input)
                     out_report["valid"] = True
-                    console.print(f"\n[record]Record #{n}[/] (control_no [control_no]{record["001"].data}[/]) is valid.")
+                    console.print(f"\n[record]Record #{n}[/] (control_no [control_no]{record['001'].data}[/]) is valid.")
                 except ValidationError as e:
                     out_report["valid"] = False
                     out_report["error_count"] = e.error_count()
