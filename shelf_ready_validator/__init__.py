@@ -1,5 +1,4 @@
 import click
-from click import Context
 import pandas as pd
 from pydantic import ValidationError
 from rich.console import Console
@@ -12,6 +11,9 @@ from shelf_ready_validator.translate import (
     get_record_input,
     read_marc_records,
 )
+
+from shelf_ready_validator.sheet import write_sheet
+
 
 theme = Theme(
     {
@@ -239,6 +241,12 @@ def export_error_report(output):
     for out in output:
         output_df = pd.DataFrame(out)
         console.print(output_df)
+        # write_sheet(
+        #     "1uerf01-YQZaUYCYDBesLiKGmp4gGeVVX89fefLGy_R0",
+        #     "Sheet1!A1:AA1000",
+        #     "USER_ENTERED",
+        #     output_df,
+        # )
         yield output_df
 
 
