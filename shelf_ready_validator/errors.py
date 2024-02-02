@@ -36,15 +36,10 @@ def extra_errors(error):
         error["loc"] = RLMarcEncoding[error["loc"][0]].value
         return error
     else:
-        extra_fields = []
-        n = 0
-        for field in error["input"]:
-            keys = field.keys()
-            for k in keys:
-                extra_field = (f"item_{n}", RLMarcEncoding[k].value)
-                extra_fields.append(extra_field)
-            n += 1
-        error["loc"] = extra_fields
+        error["loc"] = [
+            f"{RLMarcEncoding[error['loc'][0]].value}_" + str(i)
+            for i in range(len(error["input"]))
+        ]
         return error
 
 
@@ -208,11 +203,11 @@ def format_errors(e: ValidationError) -> List:
             missing_fields.append(converted_error["loc"])
         elif error["type"] == "extra_forbidden":
             converted_error = extra_errors(error)
-            if type(converted_error["loc"]) is str:
-                extra_fields.append(converted_error["loc"])
-            else:
+            if type(converted_error["loc"]) is list:
                 for loc in converted_error["loc"]:
                     extra_fields.append(loc)
+            else:
+                extra_fields.append(converted_error["loc"])
         elif error["type"] == "Item/Order location check":
             converted_error = item_order_errors(error)
             converted_error["count"] = 1
@@ -281,11 +276,7 @@ def format_error_summary(e: ValidationError) -> Dict:
             missing_fields.append(converted_error["loc"])
         elif error["type"] == "extra_forbidden":
             converted_error = extra_errors(error)
-            if type(converted_error["loc"]) is str:
-                extra_fields.append(converted_error["loc"])
-            else:
-                for loc in converted_error["loc"]:
-                    extra_fields.append(loc)
+            extra_fields.append(converted_error["loc"])
         elif error["type"] == "Item/Order location check":
             converted_error = item_order_errors(error)
             other_errors.append("Check item and order data; combination is not valid.")
@@ -306,6 +297,12 @@ def format_error_summary(e: ValidationError) -> Dict:
         if value not in ("852_ind1", "852_ind2", "949_ind1", "949_ind2")
     )
     error_summary = {
+        "error_count": str(
+            len(missing_fields)
+            + len(extra_fields)
+            + len(invalid_fields)
+            + len(other_errors)
+        ),
         "missing_field_count": str(len(missing_fields)),
         "missing_fields": missing_fields,
         "extra_field_count": str(len(extra_fields)),

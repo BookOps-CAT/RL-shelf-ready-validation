@@ -1,5 +1,4 @@
 import click
-from click import Context
 import pandas as pd
 from pydantic import ValidationError
 from rich.console import Console
@@ -12,6 +11,8 @@ from shelf_ready_validator.translate import (
     get_record_input,
     read_marc_records,
 )
+from shelf_ready_validator.sheet import write_sheet
+
 
 theme = Theme(
     {
@@ -132,11 +133,10 @@ def validate_all(reader):
                     )
                 except ValidationError as e:
                     out_report["valid"] = False
-                    out_report["error_count"] = str(e.error_count())
                     error_summary = format_error_summary(e)
                     out_report.update(error_summary)
                     console.print(
-                        f"\nRecord [record]#{n}[/] contains [error]{e.error_count()} error(s)[/]"
+                        f"\nRecord [record]#{n}[/] contains [error]{out_report['error_count']} error(s)[/]"
                     )
                     formatted_errors = format_errors(e)
                     for error in formatted_errors:
@@ -162,11 +162,10 @@ def validate_all(reader):
                     )
                 except ValidationError as e:
                     out_report["valid"] = False
-                    out_report["error_count"] = e.error_count()
                     error_summary = format_error_summary(e)
                     out_report.update(error_summary)
                     console.print(
-                        f"\nRecord [record]#{n}[/] contains [error]{e.error_count()} error(s)[/]"
+                        f"\nRecord [record]#{n}[/] contains [error]{out_report['error_count']} error(s)[/]"
                     )
                     formatted_errors = format_errors(e)
                     for error in formatted_errors:
@@ -237,8 +236,16 @@ def export_error_report(output):
     Writes error report from validate-all command to file
     """
     for out in output:
-        output_df = pd.DataFrame(out)
-        console.print(output_df)
+        output_df = pd.DataFrame(out, dtype="string")
+        output_df = output_df.fillna("None")
+        rows = output_df.values.tolist()
+        write_sheet(
+            "1uerf01-YQZaUYCYDBesLiKGmp4gGeVVX89fefLGy_R0",
+            "RecordOutput!A1:M10000",
+            "USER_ENTERED",
+            "INSERT_ROWS",
+            rows,
+        )
         yield output_df
 
 
