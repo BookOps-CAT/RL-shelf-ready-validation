@@ -136,7 +136,7 @@ def validate_all(reader):
                     error_summary = format_error_summary(e)
                     out_report.update(error_summary)
                     console.print(
-                        f"\nRecord [record]#{n}[/] contains [error]{out_report["error_count"]} error(s)[/]"
+                        f"\nRecord [record]#{n}[/] contains [error]{out_report['error_count']} error(s)[/]"
                     )
                     formatted_errors = format_errors(e)
                     for error in formatted_errors:
@@ -165,7 +165,7 @@ def validate_all(reader):
                     error_summary = format_error_summary(e)
                     out_report.update(error_summary)
                     console.print(
-                        f"\nRecord [record]#{n}[/] contains [error]{out_report["error_count"]} error(s)[/]"
+                        f"\nRecord [record]#{n}[/] contains [error]{out_report['error_count']} error(s)[/]"
                     )
                     formatted_errors = format_errors(e)
                     for error in formatted_errors:

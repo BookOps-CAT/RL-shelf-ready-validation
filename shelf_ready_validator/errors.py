@@ -36,7 +36,10 @@ def extra_errors(error):
         error["loc"] = RLMarcEncoding[error["loc"][0]].value
         return error
     else:
-        error["loc"] = [f"{RLMarcEncoding[error["loc"][0]].value}_" + str(i) for i in range(len(error["input"]))]
+        error["loc"] = [
+            f"{RLMarcEncoding[error['loc'][0]].value}_" + str(i)
+            for i in range(len(error["input"]))
+        ]
         return error
 
 
@@ -294,7 +297,12 @@ def format_error_summary(e: ValidationError) -> Dict:
         if value not in ("852_ind1", "852_ind2", "949_ind1", "949_ind2")
     )
     error_summary = {
-        "error_count": str(len(missing_fields) + len(extra_fields) + len(invalid_fields) + len(other_errors)),
+        "error_count": str(
+            len(missing_fields)
+            + len(extra_fields)
+            + len(invalid_fields)
+            + len(other_errors)
+        ),
         "missing_field_count": str(len(missing_fields)),
         "missing_fields": missing_fields,
         "extra_field_count": str(len(extra_fields)),
