@@ -41,7 +41,7 @@ Read and print MARC records one-by-one to terminal
 
 `$ validator read-input`
 
-Convert records and print to terminal. Records are converted to a dict in order to be read by the validator
+Convert records and print to terminal. Records are converted to a dict as it would be read by the validator
 
 `$ validator validate-all`
 
