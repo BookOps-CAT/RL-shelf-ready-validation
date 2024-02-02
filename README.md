@@ -30,14 +30,18 @@ Users will be prompted to input a file to be read by the tool. This tool can rea
 The following information is also available using `validator --help`
 
 ```$ validator read```
- * Read and print MARC records one-by-one to terminal
+Read and print MARC records one-by-one to terminal
+
 ```$ validator read-input```
- * Convert records and print to terminal. Records are converted to a dict in order to be read by the validator
+Convert records and print to terminal. Records are converted to a dict in order to be read by the validator
+
 ```$ validator validate-all```
- * Validates all records in a file and prints output to terminal.
+Validates all records in a file and prints output to terminal.
+
 ```$ validator validate-brief```
- * Validates all records in a file and prints summary of errors to terminal.
+Validates all records in a file and prints summary of errors to terminal.
+
 ```$ validator export```
- * Writes error report to [google sheet](https://docs.google.com/spreadsheets/d/1uerf01-YQZaUYCYDBesLiKGmp4gGeVVX89fefLGy_R0/)
+Writes error report to [google sheet](https://docs.google.com/spreadsheets/d/1uerf01-YQZaUYCYDBesLiKGmp4gGeVVX89fefLGy_R0/)
 
 Commands can also be chained to run together on the same file. For example, `validator read validate-brief` will read each MARC record and print it to the terminal and when it has finished printing each record it will print a validation summary. Similarly, `validator read validate-all` will read a MARC record, print the record to the terminal, validate the MARC record and print the error output to the terminal.
