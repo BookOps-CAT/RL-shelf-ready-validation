@@ -11,7 +11,6 @@ from shelf_ready_validator.translate import (
     get_record_input,
     read_marc_records,
 )
-
 from shelf_ready_validator.sheet import write_sheet
 
 
@@ -239,14 +238,16 @@ def export_error_report(output):
     Writes error report from validate-all command to file
     """
     for out in output:
-        output_df = pd.DataFrame(out)
-        console.print(output_df)
-        # write_sheet(
-        #     "1uerf01-YQZaUYCYDBesLiKGmp4gGeVVX89fefLGy_R0",
-        #     "Sheet1!A1:AA1000",
-        #     "USER_ENTERED",
-        #     output_df,
-        # )
+        output_df = pd.DataFrame(out, dtype="string")
+        output_df = output_df.fillna("None")
+        rows = output_df.values.tolist()
+        write_sheet(
+            "1uerf01-YQZaUYCYDBesLiKGmp4gGeVVX89fefLGy_R0",
+            "RecordOutput!A1:M10000",
+            "USER_ENTERED",
+            "INSERT_ROWS",
+            rows,
+        )
         yield output_df
 
 
