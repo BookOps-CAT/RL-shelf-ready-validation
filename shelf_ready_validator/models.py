@@ -220,6 +220,7 @@ class MonographRecord(BaseModel):
                             input=(item_location, item_type, order_location),
                         ),
                     )
+                item_number += 1
         try:
             # after checking item/order information, validate the model
             validated_self = handler(self)

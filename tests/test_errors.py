@@ -30,7 +30,7 @@ def test_extra_field_types(valid_pamphlet_record):
         OtherMaterialRecord(**valid_pamphlet_record)
     errors = e.value
     error = format_errors(errors)
-    assert error[0]["msg"] == "extra field/subfield(s)"
+    assert error["extra_field_count"] == 1
 
 
 def test_literal_error_types(valid_rl_monograph_record):
@@ -39,7 +39,7 @@ def test_literal_error_types(valid_rl_monograph_record):
         MonographRecord(**valid_rl_monograph_record)
     errors = e.value
     error = format_errors(errors)
-    assert error[0]["msg"] == "Invalid item call tag"
+    assert error["errors"][0]["msg"] == "Invalid item call tag"
 
 
 def test_missing_item_fields(valid_rl_monograph_record):
@@ -48,7 +48,7 @@ def test_missing_item_fields(valid_rl_monograph_record):
         MonographRecord(**valid_rl_monograph_record)
     errors = e.value
     error = format_errors(errors)
-    assert error[0]["msg"] == "missing field/subfield(s)"
+    assert error["missing_fields"] == [("item_0", "949$z")]
 
 
 def test_missing_other_fields(valid_rl_monograph_record):
@@ -57,7 +57,7 @@ def test_missing_other_fields(valid_rl_monograph_record):
         MonographRecord(**valid_rl_monograph_record)
     errors = e.value
     error = format_errors(errors)
-    assert error[0]["loc"] == ["852$h"]
+    assert error["missing_fields"] == ["852$h"]
 
 
 def test_location_check_type(valid_rl_monograph_record):
@@ -66,7 +66,7 @@ def test_location_check_type(valid_rl_monograph_record):
         MonographRecord(**valid_rl_monograph_record)
     errors = e.value
     error = format_errors(errors)
-    assert error[0]["type"] == "Item/Order location check"
+    assert error["errors"][0]["type"] == "Item/Order location check"
 
 
 @pytest.mark.parametrize(
@@ -79,7 +79,7 @@ def test_bib_call_no_error(valid_rl_monograph_record, value):
         MonographRecord(**valid_rl_monograph_record)
     errors = e.value
     error = format_errors(errors)
-    assert error[0]["msg"] == "Invalid ReCAP call number"
+    assert error["errors"][0]["msg"] == "Invalid ReCAP call number"
 
 
 @pytest.mark.parametrize(
@@ -93,7 +93,7 @@ def test_item_call_no_error(valid_rl_monograph_record, data):
     errors = e.value
     error = format_errors(errors)
     assert error
-    assert error[0]["msg"] == "Invalid ReCAP call number"
+    assert error["errors"][0]["msg"] == "Invalid ReCAP call number"
 
 
 @pytest.mark.parametrize(
@@ -106,7 +106,7 @@ def test_invoice_date_error(valid_rl_monograph_record, data):
         MonographRecord(**valid_rl_monograph_record)
     errors = e.value
     error = format_errors(errors)
-    assert error[0]["msg"] == "Invalid date; invoice date should be YYMMDD"
+    assert error["errors"][0]["msg"] == "Invalid date; invoice date should be YYMMDD"
 
 
 @pytest.mark.parametrize(
@@ -118,7 +118,7 @@ def test_invoice_price_error_2(valid_rl_monograph_record, field):
         MonographRecord(**valid_rl_monograph_record)
     errors = e.value
     error = format_errors(errors)
-    assert error[0]["type"] == "string_pattern_mismatch"
+    assert error["errors"][0]["type"] == "string_pattern_mismatch"
 
 
 @pytest.mark.parametrize(
@@ -131,7 +131,7 @@ def test_order_price_error(valid_rl_monograph_record, data):
         MonographRecord(**valid_rl_monograph_record)
     errors = e.value
     error = format_errors(errors)
-    assert error[0]["type"] == "string_pattern_mismatch"
+    assert error["errors"][0]["type"] == "string_pattern_mismatch"
 
 
 @pytest.mark.parametrize(
@@ -144,7 +144,23 @@ def test_item_price_error(valid_rl_monograph_record, data):
         MonographRecord(**valid_rl_monograph_record)
     errors = e.value
     error = format_errors(errors)
-    assert error[0]["msg"] == "Invalid price; item price should include a decimal point"
+    assert (
+        error["errors"][0]["msg"]
+        == "Invalid price; item price should include a decimal point"
+    )
+
+
+@pytest.mark.parametrize(
+    "field, data",
+    [("item_ind1", "0"), ("item_ind2", "0")],
+)
+def test_item_indictor_error(valid_rl_monograph_record, field, data):
+    valid_rl_monograph_record["items"][0][field] = data
+    with pytest.raises(ValidationError) as e:
+        MonographRecord(**valid_rl_monograph_record)
+    errors = e.value
+    error = format_errors(errors)
+    assert error["errors"][0]["msg"] == "Invalid indicator"
 
 
 @pytest.mark.parametrize(
@@ -162,7 +178,10 @@ def test_message_error(valid_rl_monograph_record, field, data):
         MonographRecord(**valid_rl_monograph_record)
     errors = e.value
     error = format_errors(errors)
-    assert error[0]["msg"] == "Invalid item message; message should be in all caps"
+    assert (
+        error["errors"][0]["msg"]
+        == "Invalid item message; message should be in all caps"
+    )
 
 
 @pytest.mark.parametrize(
@@ -175,7 +194,7 @@ def test_item_vendor_code_error(valid_rl_monograph_record, data):
         MonographRecord(**valid_rl_monograph_record)
     errors = e.value
     error = format_errors(errors)
-    assert error[0]["type"] == "literal_error"
+    assert error["errors"][0]["type"] == "literal_error"
 
 
 @pytest.mark.parametrize(
@@ -188,7 +207,7 @@ def test_bib_vendor_code_error(valid_rl_monograph_record, data):
         MonographRecord(**valid_rl_monograph_record)
     errors = e.value
     error = format_errors(errors)
-    assert error[0]["type"] == "literal_error"
+    assert error["errors"][0]["type"] == "literal_error"
 
 
 def test_item_union_error(valid_rl_monograph_record):
@@ -197,7 +216,7 @@ def test_item_union_error(valid_rl_monograph_record):
         MonographRecord(**valid_rl_monograph_record)
     errors = e.value
     error = format_errors(errors)
-    assert error[0]["type"] == "union_tag_invalid"
+    assert error["errors"][0]["type"] == "union_tag_invalid"
 
 
 def test_call_tag_error(valid_rl_monograph_record):
@@ -206,7 +225,7 @@ def test_call_tag_error(valid_rl_monograph_record):
         MonographRecord(**valid_rl_monograph_record)
     errors = e.value
     error = format_errors(errors)
-    assert error[0]["msg"] == "Invalid item call tag"
+    assert error["errors"][0]["msg"] == "Invalid item call tag"
 
 
 @pytest.mark.parametrize(
@@ -223,7 +242,7 @@ def test_item_location_error(valid_rl_monograph_record, data):
         MonographRecord(**valid_rl_monograph_record)
     errors = e.value
     error = format_errors(errors)
-    assert error[1]["msg"] == "Item location does not match a valid location"
+    assert error["errors"][1]["msg"] == "Item location does not match a valid location"
 
 
 @pytest.mark.parametrize(
@@ -241,7 +260,7 @@ def test_order_location_error(valid_rl_monograph_record, data):
         MonographRecord(**valid_rl_monograph_record)
     errors = e.value
     error = format_errors(errors)
-    assert error[2]["msg"] == "Order location does not match a valid location"
+    assert error["errors"][2]["msg"] == "Order location does not match a valid location"
 
 
 def test_extra_field_error(valid_pamphlet_record):
@@ -255,7 +274,7 @@ def test_extra_field_error(valid_pamphlet_record):
         OtherMaterialRecord(**valid_pamphlet_record)
     errors = e.value
     error = format_errors(errors)
-    assert error[0]["msg"] == "extra field/subfield(s)"
+    assert error["extra_fields"] == ["949_0"]
 
 
 @pytest.mark.parametrize(

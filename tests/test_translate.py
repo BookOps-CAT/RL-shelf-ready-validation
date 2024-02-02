@@ -1,4 +1,4 @@
-from shelf_ready_validator.translate import read_marc_records, get_record_input, get_field_subfield
+from shelf_ready_validator.translate import read_marc_records, get_record_input
 from pymarc import Field, Subfield
 import pytest
 
@@ -16,7 +16,27 @@ def test_get_record_input(stub_record):
     assert converted["order_fund"] == "123456apprv"
 
 
+def test_get_record_input_keyerror(stub_record):
+    stub_record["901"].delete_subfield("a")
+    converted = get_record_input(stub_record)
+    assert converted["order_fund"] == "123456apprv"
+
+
 def test_convert_monograph_record_to_input(stub_record):
+    converted = get_record_input(stub_record)
+    assert converted["material_type"] == "monograph_record"
+
+
+def test_convert_monograph_record_value_error(stub_record):
+    stub_record["300"].delete_subfield("a")
+    stub_record["300"].add_subfield("a", "xi pages :")
+    converted = get_record_input(stub_record)
+    assert converted["material_type"] == "monograph_record"
+
+
+def test_convert_monograph_record_other(stub_record):
+    stub_record["300"].delete_subfield("a")
+    stub_record["300"].add_subfield("a", "xi, 120 pages :")
     converted = get_record_input(stub_record)
     assert converted["material_type"] == "monograph_record"
 

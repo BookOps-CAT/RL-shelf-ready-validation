@@ -4,6 +4,43 @@ from pymarc import Field, Subfield
 
 
 @pytest.fixture
+def test_output_data():
+    test_output_data = [
+        [
+            "vendor_code",
+            "record_number",
+            "control_number",
+            "valid",
+            "error_count",
+            "missing_field_count",
+            "missing_fields",
+            "extra_field_count",
+            "extra_fields",
+            "invalid_field_count",
+            "invalid_fields",
+            "other_errors",
+            "other_error_fields",
+        ],
+        [
+            "VENDOR",
+            "1",
+            "on1234567890",
+            "FALSE",
+            "3",
+            "1",
+            "949$i",
+            "0",
+            "[]",
+            "1",
+            "901$a",
+            "[]",
+            "[('item_0', ('949$l', '949$t', '960$t'))]",
+        ],
+    ]
+    return test_output_data
+
+
+@pytest.fixture
 def valid_rl_monograph_record():
     valid_rl_monograph_record = {
         "material_type": "monograph_record",

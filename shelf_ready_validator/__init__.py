@@ -5,7 +5,7 @@ from rich.console import Console
 from rich.theme import Theme
 from functools import update_wrapper
 from shelf_ready_validator.models import MonographRecord, OtherMaterialRecord
-from shelf_ready_validator.errors import format_errors, format_error_summary
+from shelf_ready_validator.errors import format_errors
 from shelf_ready_validator.translate import (
     get_material_type,
     get_record_input,
@@ -42,9 +42,9 @@ def cli(file):
 @cli.result_callback()
 def process_commands(processors, file):
     """
-    Creates iterator for all records in a MARC file
-    Runs record through each function that is called by the command input
-    This function will return a TypeError if a command is called that does not return a value
+    Creates iterator for all records in a MARC file.
+    Runs record through each function that is called by the command input.
+    Return a TypeError if a command is called that does not return a value.
     """
     reader = read_marc_records(file)
 
@@ -55,6 +55,10 @@ def process_commands(processors, file):
 
 
 def processor(f):
+    """
+    A decorator for all functions that process MARC data or validation data.
+    """
+
     def new_func(*args, **kwargs):
         def processor(stream):
             return f(stream, *args, **kwargs)
@@ -133,25 +137,24 @@ def validate_all(reader):
                     )
                 except ValidationError as e:
                     out_report["valid"] = False
-                    error_summary = format_error_summary(e)
-                    out_report.update(error_summary)
+                    error_summary = format_errors(e)
                     console.print(
-                        f"\nRecord [record]#{n}[/] contains [error]{out_report['error_count']} error(s)[/]"
+                        f"\nRecord [record]#{n}[/] contains [error]{error_summary['error_count']} error(s)[/]"
                     )
-                    formatted_errors = format_errors(e)
-                    for error in formatted_errors:
-                        if error["type"] == "missing":
-                            console.print(
-                                f"\t{error['count']} {error['msg']}: {error['loc']}"
-                            )
-                        elif error["type"] == "extra_forbidden":
-                            console.print(
-                                f"\t{error['count']} {error['msg']}: {error['loc']}"
-                            )
-                        else:
-                            console.print(
-                                f"\t{error['msg']}: {error['input']} {error['loc']}"
-                            )
+                    if error_summary["missing_field_count"] > 0:
+                        console.print(
+                            f"\t{error_summary['missing_field_count']} missing field/subfield(s): {error_summary['missing_fields']}"
+                        )
+                    if error_summary["extra_field_count"] > 0:
+                        console.print(
+                            f"\t{error_summary['extra_field_count']} extra field/subfield(s): {error_summary['extra_fields']}"
+                        )
+                    for error in error_summary["errors"]:
+                        console.print(
+                            f"\t{error['msg']}: {error['input']} {error['loc']}"
+                        )
+                    del error_summary["errors"]
+                    out_report.update(error_summary)
                 output.append(out_report)
             else:
                 try:
@@ -162,25 +165,24 @@ def validate_all(reader):
                     )
                 except ValidationError as e:
                     out_report["valid"] = False
-                    error_summary = format_error_summary(e)
-                    out_report.update(error_summary)
+                    error_summary = format_errors(e)
                     console.print(
-                        f"\nRecord [record]#{n}[/] contains [error]{out_report['error_count']} error(s)[/]"
+                        f"\nRecord [record]#{n}[/] contains [error]{error_summary['error_count']} error(s)[/]"
                     )
-                    formatted_errors = format_errors(e)
-                    for error in formatted_errors:
-                        if error["type"] == "missing":
-                            console.print(
-                                f"\t{error['count']} {error['msg']}: {error['loc']}"
-                            )
-                        elif error["type"] == "extra_forbidden":
-                            console.print(
-                                f"\t{error['count']} {error['msg']}: {error['loc']}"
-                            )
-                        else:
-                            console.print(
-                                f"\t{error['msg']}: {error['input']} {error['loc']}"
-                            )
+                    if error_summary["missing_field_count"] > 0:
+                        console.print(
+                            f"\t{error_summary['missing_field_count']} missing field/subfield(s): {error_summary['missing_fields']}"
+                        )
+                    if error_summary["extra_field_count"] > 0:
+                        console.print(
+                            f"\t{error_summary['extra_field_count']} extra field/subfield(s): {error_summary['extra_fields']}"
+                        )
+                    for error in error_summary["errors"]:
+                        console.print(
+                            f"\t{error['msg']}: {error['input']} {error['loc']}"
+                        )
+                    del error_summary["errors"]
+                    out_report.update(error_summary)
                 output.append(out_report)
         yield output
         break

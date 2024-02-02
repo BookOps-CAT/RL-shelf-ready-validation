@@ -84,18 +84,19 @@ def get_material_type(record):
         return "catalogue_raissonne"
     elif "Catalogue Raissonne" in subject_subfield_list:
         return "catalogue_raissonne"
+    elif "volumes" in split_300a[1]:
+        return "multipart"
     elif "pages" in split_300a[1]:
         try:
             pages = int(split_300a[0])
             if pages < 50:
                 return "pamphlet"
+            else:
+                return "monograph_record"
         except ValueError:
-            pass
-    elif "volumes" in split_300a[1]:
-        return "multipart"
+            return "monograph_record"
     else:
-        pass
-    return "monograph_record"
+        return "monograph_record"
 
 
 def get_record_input(record):
