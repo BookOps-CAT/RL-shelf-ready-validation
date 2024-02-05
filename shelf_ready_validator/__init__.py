@@ -12,7 +12,8 @@ from shelf_ready_validator.translate import (
     read_marc_records,
 )
 from shelf_ready_validator.sheet import write_sheet
-
+from datetime import datetime
+import io
 
 theme = Theme(
     {
@@ -31,11 +32,14 @@ console = Console(tab_size=5, theme=theme)
     prompt=True,
     help="The MARC file you would like to open.",
 )
-def cli(file):
+@click.pass_context
+def cli(ctx, file):
     """
     Read and validate MARC records
 
     """
+    file_input = io.BytesIO(file.encode("utf-8"))
+    ctx.obj = io.TextIOWrapper(file_input, encoding="utf-8").read()
     pass
 
 
@@ -68,7 +72,7 @@ def processor(f):
     return update_wrapper(new_func, f)
 
 
-@cli.command("read", short_help="print MARC records")
+@cli.command("read", short_help="Read MARC records")
 @processor
 def read_marc(reader):
     """
@@ -231,15 +235,65 @@ def validate_summary(reader):
         break
 
 
+@cli.command("validate-raw", short_help="get raw validation errors")
+@processor
+def validate_raw(reader):
+    """
+    Validate all records in file, raw errors
+    """
+    errored_records = []
+    n = 0
+    while True:
+        for record in reader:
+            n += 1
+            record_input = get_record_input(record)
+            record_type = get_material_type(record)
+            control_number = record["001"].data
+            if record_type == "monograph_record":
+                try:
+                    MonographRecord(**record_input)
+                    console.print(
+                        f"Record # {n} (control no {control_number}) validates"
+                    )
+                except ValidationError as e:
+                    console.print(
+                        f"Record #{n} (control no {control_number}) has errors"
+                    )
+                    console.print(e.errors())
+                    errored_records.append(e.errors())
+            else:
+                try:
+                    OtherMaterialRecord(**record_input)
+                    console.print(
+                        f"Record # {n} (control no {control_number} validates"
+                    )
+                except ValidationError as e:
+                    console.print(
+                        f"Record #{n} (control no {control_number}) has errors"
+                    )
+                    console.print(e.errors())
+                    errored_records.append(e.errors())
+        yield errored_records
+        break
+
+
 @cli.command("export", short_help="export validation report")
 @processor
-def export_error_report(output):
+@click.pass_obj
+def export_error_report(filename, output):
     """
     Writes error report from validate-all command to file
     """
     for out in output:
         output_df = pd.DataFrame(out, dtype="string")
         output_df = output_df.fillna("None")
+        file = filename.split("/")[-1]
+        output_df.insert(loc=0, column="filename", value=file)
+        output_df.insert(
+            loc=0,
+            column="validation-date",
+            value=datetime.today().strftime("%Y-%m-%d %I:%M:%S"),
+        )
         rows = output_df.values.tolist()
         write_sheet(
             "1uerf01-YQZaUYCYDBesLiKGmp4gGeVVX89fefLGy_R0",

@@ -64,6 +64,30 @@ def get_field_subfield(record, f, s):
         return e
 
 
+def get_field_indicators(record, f, i):
+    """
+    Gets value of subfield and returns it to be assigned to a variable
+    if subfield does not exist, returns KeyError
+    KeyError can be stripped out before reading input into validator
+    """
+    if i == "indicator1":
+        try:
+            field = record[f]
+            field_indicator = field.indicator1
+            return field_indicator
+        except KeyError as e:
+            return e
+    elif i == "indicator2":
+        try:
+            field = record[f]
+            field_indicator = field.indicator2
+            return field_indicator
+        except KeyError as e:
+            return e
+    else:
+        pass
+
+
 def get_material_type(record):
     """
     Reads record data to determine material type
@@ -109,8 +133,8 @@ def get_record_input(record):
     record_data = {
         "material_type": get_material_type(record),
         "bib_call_no": get_field_subfield(record, "852", "h"),
-        "bib_call_no_ind1": record.get("852").indicator1,
-        "bib_call_no_ind2": record.get("852").indicator2,
+        "bib_call_no_ind1": get_field_indicators(record, "852", "indicator1"),
+        "bib_call_no_ind2": get_field_indicators(record, "852", "indicator2"),
         "bib_vendor_code": get_field_subfield(record, "901", "a"),
         "lcc": get_field_subfield(record, "050", "a"),
         "invoice_date": get_field_subfield(record, "980", "a"),
@@ -123,8 +147,8 @@ def get_record_input(record):
         "order_price": get_field_subfield(record, "960", "s"),
         "order_location": get_field_subfield(record, "960", "t"),
         "order_fund": get_field_subfield(record, "960", "u"),
-        "order_ind1": record.get("960").indicator1,
-        "order_ind2": record.get("960").indicator2,
+        "order_ind1": get_field_indicators(record, "960", "indicator1"),
+        "order_ind2": get_field_indicators(record, "960", "indicator1"),
         "library": library,
     }
     record_input = {
