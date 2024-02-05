@@ -6,7 +6,6 @@ from pydantic import (
     ConfigDict,
     ValidationError,
     model_validator,
-    conlist,
 )
 from pydantic_core import InitErrorDetails, PydanticCustomError
 
@@ -140,7 +139,6 @@ class MonographRecord(BaseModel):
     order_ind1: Literal[" "]
     order_ind2: Literal[" "]
     items: List[Item]
-    # items: conlist(Item, min_length=1)
 
     @model_validator(mode="wrap")
     def match_locations(self, handler) -> "MonographRecord":

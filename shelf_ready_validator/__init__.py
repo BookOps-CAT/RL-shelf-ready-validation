@@ -72,7 +72,7 @@ def processor(f):
     return update_wrapper(new_func, f)
 
 
-@cli.command("read", short_help="Read MARC records")
+@cli.command("read", short_help="read MARC records")
 @processor
 def read_marc(reader):
     """
@@ -239,7 +239,7 @@ def validate_summary(reader):
 @processor
 def validate_raw(reader):
     """
-    Validate all records in file, raw errors
+    Returns raw validation error output
     """
     errored_records = []
     n = 0

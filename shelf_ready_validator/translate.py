@@ -8,7 +8,7 @@ class RLMarcEncoding(Enum):
     A class to translate fields used in the validator to MARC fields/subfields
     """
 
-    bib_call_no = "852$h"
+    bib_call_no = "852"
     bib_call_no_ind1 = "852_ind1"
     bib_call_no_ind2 = "852_ind2"
     bib_vendor_code = "901$a"
@@ -155,8 +155,8 @@ def get_record_input(record):
         key: val for key, val in record_data.items() if type(val) is not KeyError
     }
     items = record.get_fields("949")
-    item_list = []
     if items:
+        item_list = []
         for item in items:
             item_output = {
                 "item_call_tag": item.get("z"),
@@ -175,7 +175,7 @@ def get_record_input(record):
                 key: val for key, val in item_output.items() if val is not None
             }
             item_list.append(edited_item)
-    record_input["items"] = item_list
+        record_input["items"] = item_list
     if record_data["material_type"] == "monograph_record":
         del record_input["library"]
         return record_input
