@@ -287,7 +287,8 @@ def export_error_report(filename, output):
     for out in output:
         output_df = pd.DataFrame(out, dtype="string")
         output_df = output_df.fillna("None")
-        output_df.insert(loc=0, column="filename", value=filename)
+        file = filename.split("/")[-1]
+        output_df.insert(loc=0, column="filename", value=file)
         output_df.insert(
             loc=0,
             column="validation-date",
