@@ -57,7 +57,7 @@ def test_missing_other_fields(valid_rl_monograph_record):
         MonographRecord(**valid_rl_monograph_record)
     errors = e.value
     error = format_errors(errors)
-    assert error["missing_fields"] == ["852$h"]
+    assert error["missing_fields"] == ["852"]
 
 
 def test_location_check_type(valid_rl_monograph_record):
