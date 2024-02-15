@@ -125,6 +125,7 @@ dmypy.json
 .pyre/
 
 # localfiles/
+temp/
 
 # OSX
 .DS_Store

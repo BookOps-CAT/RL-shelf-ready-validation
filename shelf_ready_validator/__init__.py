@@ -90,7 +90,7 @@ def read_marc(reader):
         break
 
 
-@cli.command("read-input", short_help="print records as dict")
+@cli.command("read-input", short_help="print records as dictionary")
 @processor
 def read_input(reader):
     """
@@ -296,7 +296,7 @@ def export_error_report(filename, output):
         )
         rows = output_df.values.tolist()
         write_sheet(
-            "1uerf01-YQZaUYCYDBesLiKGmp4gGeVVX89fefLGy_R0",
+            "1ZYuhMIE1WiduV98Pdzzw7RwZ08O-sJo7HJihWVgSOhQ",
             "RecordOutput!A1:M10000",
             "USER_ENTERED",
             "INSERT_ROWS",

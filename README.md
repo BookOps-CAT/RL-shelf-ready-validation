@@ -53,7 +53,7 @@ Validates all records in a file and prints summary of errors to terminal.
 
 `$ validator export`
 
-Writes error report to [google sheet](https://docs.google.com/spreadsheets/d/1uerf01-YQZaUYCYDBesLiKGmp4gGeVVX89fefLGy_R0/)
+Writes error report to [google sheet](https://docs.google.com/spreadsheets/d/1ZYuhMIE1WiduV98Pdzzw7RwZ08O-sJo7HJihWVgSOhQ/edit?usp=sharing)
 
 #### Combining commands
 
