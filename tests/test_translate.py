@@ -1,4 +1,4 @@
-from shelf_ready_validator.translate import read_marc_records, get_record_input
+from shelf_ready_validator.translate import VendorRecord, read_marc_records
 from pymarc import Field, Subfield
 import pytest
 
@@ -12,47 +12,47 @@ def test_read_marc_records():
 
 
 def test_get_record_input(stub_record):
-    converted = get_record_input(stub_record)
-    assert converted["order_fund"] == "123456apprv"
+    r = VendorRecord(stub_record)
+    assert r.dict_input["order_fund"] == "123456apprv"
 
 
 def test_get_record_input_keyerror(stub_record):
     stub_record["901"].delete_subfield("a")
-    converted = get_record_input(stub_record)
-    assert converted["order_fund"] == "123456apprv"
+    r = VendorRecord(stub_record)
+    assert r.dict_input["order_fund"] == "123456apprv"
 
 
 def test_convert_monograph_record_to_input(stub_record):
-    converted = get_record_input(stub_record)
-    assert converted["material_type"] == "monograph_record"
+    r = VendorRecord(stub_record)
+    assert r.material_type == "monograph_record"
 
 
 def test_convert_monograph_record_value_error(stub_record):
     stub_record["300"].delete_subfield("a")
     stub_record["300"].add_subfield("a", "xi pages :")
-    converted = get_record_input(stub_record)
-    assert converted["material_type"] == "monograph_record"
+    r = VendorRecord(stub_record)
+    assert r.material_type == "monograph_record"
 
 
 def test_convert_monograph_record_other(stub_record):
     stub_record["300"].delete_subfield("a")
     stub_record["300"].add_subfield("a", "xi, 120 pages :")
-    converted = get_record_input(stub_record)
-    assert converted["material_type"] == "monograph_record"
+    r = VendorRecord(stub_record)
+    assert r.material_type == "monograph_record"
 
 
 def test_convert_pamphlet_record_to_input(stub_record):
     stub_record["300"].delete_subfield("a")
     stub_record["300"].add_subfield("a", "10 pages :")
-    converted = get_record_input(stub_record)
-    assert converted["material_type"] == "pamphlet"
+    r = VendorRecord(stub_record)
+    assert r.material_type == "pamphlet"
 
 
 def test_convert_multivol_record_to_input(stub_record):
     stub_record["300"].delete_subfield("a")
     stub_record["300"].add_subfield("a", "10 volumes :")
-    converted = get_record_input(stub_record)
-    assert converted["material_type"] == "multipart"
+    r = VendorRecord(stub_record)
+    assert r.material_type == "multipart"
 
 
 @pytest.mark.parametrize(
@@ -72,8 +72,8 @@ def test_convert_CR_record_to_input(stub_record, subfield):
             ],
         )
     )
-    converted = get_record_input(stub_record)
-    assert converted["material_type"] == "catalogue_raissonne"
+    r = VendorRecord(stub_record)
+    assert r.material_type == "catalogue_raissonne"
 
 
 def test_convert_monograph_with_items(stub_record):
@@ -93,5 +93,5 @@ def test_convert_monograph_with_items(stub_record):
             ],
         )
     )
-    converted = get_record_input(stub_record)
-    assert len(converted["items"]) == 1
+    r = VendorRecord(stub_record)
+    assert len(r.dict_input["items"]) == 1

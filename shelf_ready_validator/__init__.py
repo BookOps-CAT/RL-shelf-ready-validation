@@ -6,14 +6,10 @@ from rich.theme import Theme
 from functools import update_wrapper
 from shelf_ready_validator.models import MonographRecord, OtherMaterialRecord
 from shelf_ready_validator.errors import format_errors
-from shelf_ready_validator.translate import (
-    get_material_type,
-    get_record_input,
-    read_marc_records,
-)
 from shelf_ready_validator.sheet import write_sheet
+from shelf_ready_validator.connect import sftpConnection
+from shelf_ready_validator.translate import VendorRecord, read_marc_records
 from datetime import datetime
-import io
 
 theme = Theme(
     {
@@ -27,36 +23,35 @@ console = Console(tab_size=5, theme=theme)
 
 @click.group(chain=True)
 @click.option(
-    "--file",
-    "file",
-    prompt=True,
-    help="The MARC file you would like to open.",
+    "--vendor",
+    "vendor",
+    prompt="Which vendor are you working with?",
+    help="The vendor whose records you would like to retrieve or validate.",
 )
+@click.option("--file","file", prompt="Which file would like to open?", help="The MARC file you would like to open.",)
 @click.pass_context
-def cli(ctx, file):
+def cli(ctx, vendor, file):
     """
     Read and validate MARC records
-
     """
-    file_input = io.BytesIO(file.encode("utf-8"))
-    ctx.obj = io.TextIOWrapper(file_input, encoding="utf-8").read()
-    pass
+    ctx.obj = {"file": f"{file.split("/")[-1]}", "filepath": file, "vendor_name": vendor}
 
 
 @cli.result_callback()
-def process_commands(processors, file):
+def process_commands(processors, vendor, file):
     """
     Creates iterator for all records in a MARC file.
     Runs record through each function that is called by the command input.
     Return a TypeError if a command is called that does not return a value.
     """
-    reader = read_marc_records(file)
-
+    if ".mrc" in file:
+        reader = read_marc_records(file)
+    else:
+        reader = ()
     for processor in processors:
         reader = processor(reader)
-    for record in reader:
+    for _ in reader:
         pass
-
 
 def processor(f):
     """
@@ -70,6 +65,51 @@ def processor(f):
         return processor
 
     return update_wrapper(new_func, f)
+
+def generator(f):
+    """Similar to the :func:`processor` but passes through old values
+    unchanged and does not pass through the values as parameter.
+    """
+
+    @processor
+    def new_func(stream, *args, **kwargs):
+        yield from stream
+        yield from f(*args, **kwargs)
+
+    return update_wrapper(new_func, f)
+
+@cli.command("list-all-files", short_help="list all files on vendor sftp")
+@click.pass_obj
+@generator
+def list_vendor_files(ctx):
+    """
+    Lists all files on vendor SFTP site.
+    """
+    vendor_connect = sftpConnection(ctx["vendor_name"])
+    vendor_connect.list_all_files()
+    yield ctx["vendor_name"]
+
+@cli.command("list-recent-files", short_help="list recent files on vendor sftp")
+@click.pass_obj
+@generator
+def list_recent_files(ctx):
+    """
+    Lists files on vendor SFTP site that were created in the last week.
+    """
+    vendor_connect = sftpConnection(ctx["vendor_name"])
+    vendor_connect.list_recent_records()
+    yield ctx["vendor_name"]
+
+@cli.command("get-recent-files", short_help="get recent records via sftp")
+@click.pass_obj
+@generator
+def retrieve_records(ctx):
+    """
+    Retrieves records from vendor SFTP site that were created in the last week.  
+    """
+    vendor_connect = sftpConnection(ctx["vendor_name"])
+    vendor_connect.get_recent_records()
+    yield ctx["vendor_name"]
 
 
 @cli.command("read", short_help="read MARC records")
@@ -101,13 +141,15 @@ def read_input(reader):
     while True:
         for record in reader:
             n += 1
-            converted_record = get_record_input(record)
+            r = VendorRecord(record)
+            converted_record = r.dict_input
             console.print(f"Printing record [record]#{n}[/]")
             console.print(converted_record)
             yield converted_record
             click.pause(info="Press any key to read next record")
         console.print("No more records")
         break
+
 
 
 @cli.command("validate-all", short_help="validate all records")
@@ -125,16 +167,15 @@ def validate_all(reader):
         console.print("\nChecking all records...")
         for record in reader:
             n += 1
-            record_input = get_record_input(record)
-            record_type = get_material_type(record)
+            r = VendorRecord(record)
             out_report = {
-                "vendor_code": record_input["bib_vendor_code"],
+                "vendor_code": r.dict_input["bib_vendor_code"],
                 "record_number": n,
                 "control_number": record["001"].data,
             }
-            if record_type == "monograph_record":
+            if r.material_type == "monograph_record":
                 try:
-                    MonographRecord(**record_input)
+                    MonographRecord(**r.dict_input)
                     out_report["valid"] = True
                     console.print(
                         f"\n[record]Record #{n}[/] (control_no [control_no]{record['001'].data}[/]) is valid."
@@ -145,14 +186,6 @@ def validate_all(reader):
                     console.print(
                         f"\nRecord [record]#{n}[/] contains [error]{error_summary['error_count']} error(s)[/]"
                     )
-                    if error_summary["missing_field_count"] > 0:
-                        console.print(
-                            f"\t{error_summary['missing_field_count']} missing field/subfield(s): {error_summary['missing_fields']}"
-                        )
-                    if error_summary["extra_field_count"] > 0:
-                        console.print(
-                            f"\t{error_summary['extra_field_count']} extra field/subfield(s): {error_summary['extra_fields']}"
-                        )
                     for error in error_summary["errors"]:
                         console.print(
                             f"\t{error['msg']}: {error['input']} {error['loc']}"
@@ -162,7 +195,7 @@ def validate_all(reader):
                 output.append(out_report)
             else:
                 try:
-                    OtherMaterialRecord(**record_input)
+                    OtherMaterialRecord(**r.dict_input)
                     out_report["valid"] = True
                     console.print(
                         f"\n[record]Record #{n}[/] (control_no [control_no]{record['001'].data}[/]) is valid."
@@ -173,14 +206,6 @@ def validate_all(reader):
                     console.print(
                         f"\nRecord [record]#{n}[/] contains [error]{error_summary['error_count']} error(s)[/]"
                     )
-                    if error_summary["missing_field_count"] > 0:
-                        console.print(
-                            f"\t{error_summary['missing_field_count']} missing field/subfield(s): {error_summary['missing_fields']}"
-                        )
-                    if error_summary["extra_field_count"] > 0:
-                        console.print(
-                            f"\t{error_summary['extra_field_count']} extra field/subfield(s): {error_summary['extra_fields']}"
-                        )
                     for error in error_summary["errors"]:
                         console.print(
                             f"\t{error['msg']}: {error['input']} {error['loc']}"
@@ -205,12 +230,11 @@ def validate_summary(reader):
     while True:
         for record in reader:
             total_records += 1
-            record_input = get_record_input(record)
-            record_type = get_material_type(record)
+            r = VendorRecord(record)
             control_number = record["001"].data
-            if record_type == "monograph_record":
+            if r.material_type == "monograph_record":
                 try:
-                    MonographRecord(**record_input)
+                    MonographRecord(**r.dict_input)
                     valid_records += 1
                 except ValidationError as e:
                     invalid_records += 1
@@ -219,7 +243,7 @@ def validate_summary(reader):
                     errored_records.append(error_output)
             else:
                 try:
-                    OtherMaterialRecord(**record_input)
+                    OtherMaterialRecord(**r.dict_input)
                     valid_records += 1
                 except ValidationError as e:
                     invalid_records += 1
@@ -246,12 +270,11 @@ def validate_raw(reader):
     while True:
         for record in reader:
             n += 1
-            record_input = get_record_input(record)
-            record_type = get_material_type(record)
+            r = VendorRecord(record)
             control_number = record["001"].data
-            if record_type == "monograph_record":
+            if r.material_type == "monograph_record":
                 try:
-                    MonographRecord(**record_input)
+                    MonographRecord(**r.dict_input)
                     console.print(
                         f"Record # {n} (control no {control_number}) validates"
                     )
@@ -263,7 +286,7 @@ def validate_raw(reader):
                     errored_records.append(e.errors())
             else:
                 try:
-                    OtherMaterialRecord(**record_input)
+                    OtherMaterialRecord(**r.dict_input)
                     console.print(
                         f"Record # {n} (control no {control_number} validates"
                     )
@@ -280,14 +303,14 @@ def validate_raw(reader):
 @cli.command("export", short_help="export validation report")
 @processor
 @click.pass_obj
-def export_error_report(filename, output):
+def export_error_report(ctx, output):
     """
     Writes error report from validate-all command to file
     """
     for out in output:
         output_df = pd.DataFrame(out, dtype="string")
         output_df = output_df.fillna("None")
-        file = filename.split("/")[-1]
+        file = ctx["file"]
         output_df.insert(loc=0, column="filename", value=file)
         output_df.insert(
             loc=0,
@@ -303,7 +326,6 @@ def export_error_report(filename, output):
             rows,
         )
         yield output_df
-
 
 def main():
     cli()
