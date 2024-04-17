@@ -126,6 +126,7 @@ dmypy.json
 
 # localfiles/
 temp/
+*.mrk
 
 # OSX
 .DS_Store

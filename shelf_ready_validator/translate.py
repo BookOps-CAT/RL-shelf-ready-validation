@@ -1,5 +1,6 @@
 from pymarc import Record, Field
 from enum import Enum
+from typing import Generator
 
 from bookops_marc import SierraBibReader
 
@@ -56,7 +57,7 @@ class VendorRecord:
 
 
 
-    def _get_field_subfield(self, field: str, subfield: str):
+    def _get_field_subfield(self, field: str, subfield: str) -> str:
         """
         Gets value of subfield and returns it to be assigned to a variable
         if subfield does not exist, returns KeyError
@@ -68,7 +69,7 @@ class VendorRecord:
         except KeyError as e:
             return e
 
-    def _get_field_indicators(self, field: Field, indicator: str):
+    def _get_field_indicators(self, field: Field, indicator: str) -> str:
         """
         Gets value of subfield and returns it to be assigned to a variable
         if subfield does not exist, returns KeyError
@@ -81,17 +82,15 @@ class VendorRecord:
                 return field_indicator
             except KeyError as e:
                 return e
-        elif indicator == "indicator2":
+        if indicator == "indicator2":
             try:
                 field = self.record[field]
                 field_indicator = field.indicator2
                 return field_indicator
             except KeyError as e:
                 return e
-        else:
-            pass
 
-    def _get_dict_input(self):
+    def _get_dict_input(self) -> dict:
         """
         Reads a MARC record and creates dict input for validation
         Uses get_field_subfield function to return KeyErrors for missing fields
@@ -102,8 +101,8 @@ class VendorRecord:
         record_data = {
             "material_type": self._get_material_type(),
             "bib_call_no": self._get_field_subfield("852", "h"),
-            "bib_call_no_ind1": self._get_field_subfield("852", "indicator1"),
-            "bib_call_no_ind2": self._get_field_subfield("852", "indicator2"),
+            "bib_call_no_ind1": self._get_field_indicators("852", "indicator1"),
+            "bib_call_no_ind2": self._get_field_indicators("852", "indicator2"),
             "bib_vendor_code": self._get_field_subfield("901", "a"),
             "lcc": self._get_field_subfield("050", "a"),
             "invoice_date": self._get_field_subfield("980", "a"),
@@ -150,7 +149,7 @@ class VendorRecord:
             return dict_input
         return dict_input
 
-    def _get_material_type(self):
+    def _get_material_type(self) -> str:
         """
         Reads record data to determine material type
         Validator chooses model to validate against based on material type
@@ -186,7 +185,7 @@ class VendorRecord:
             return "monograph_record"
         
 
-def read_marc_records(file):
+def read_marc_records(file: str) -> Generator[Record, None, None]:
     """
     Reads .mrc file and returns a record
     """

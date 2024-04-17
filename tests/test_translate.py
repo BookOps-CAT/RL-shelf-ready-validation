@@ -95,3 +95,9 @@ def test_convert_monograph_with_items(stub_record):
     )
     r = VendorRecord(stub_record)
     assert len(r.dict_input["items"]) == 1
+
+def test_convert_invalid_record(stub_record):
+    stub_record.remove_fields("852")
+    with pytest.raises(KeyError):
+        r = VendorRecord(stub_record)
+        r.dict_input["bib_call_no_ind1"]
