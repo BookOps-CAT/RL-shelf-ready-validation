@@ -34,7 +34,7 @@ def cli(ctx, vendor, file):
     """
     Read and validate MARC records
     """
-    ctx.obj = {"file": f"{file.split("/")[-1]}", "filepath": file, "vendor_name": vendor}
+    ctx.obj = {"file": f"{file.split('/')[-1]}", "filepath": file, "vendor_name": vendor}
 
 
 @cli.result_callback()
