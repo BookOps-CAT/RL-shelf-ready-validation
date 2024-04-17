@@ -70,7 +70,7 @@ class sftpConnection:
             local_path = local + file
             file_data = sftp_client.stat(file)
             update_date = datetime.fromtimestamp(file_data.st_mtime)
-            print(f"{file} was created {(today - update_date).days} days ago on {update_date}")
+            print(f"{file} was created {(today - update_date).days} days ago on {update_date.strftime('%Y-%m-%d')}")
         sftp_client.close()
 
     def get_recent_records(self):
@@ -94,7 +94,7 @@ class sftpConnection:
             update_date = datetime.fromtimestamp(file_data.st_mtime)
             if update_date >= today - timedelta(days=7):
                 sftp_client.get(file, local_path)
-                print(f"{file} is new today, {today}")
+                print(f"{file} is new today, {today.strftime('%Y-%m-%d')}")
             todays_files.append(local_path)
         sftp_client.close()
         return todays_files
@@ -118,6 +118,5 @@ class sftpConnection:
             file_data = sftp_client.stat(file)
             update_date = datetime.fromtimestamp(file_data.st_mtime)
             if update_date >= today - timedelta(days=7):
-                sftp_client.get(file, local_path)
-                print(f"{file} is new today, {today}")
+                print(f"{file} is new today ({today.strftime('%Y-%m-%d')}) and was created on {update_date.strftime('%Y-%m-%d')}")
         sftp_client.close()

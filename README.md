@@ -24,24 +24,28 @@ This tool currently validates EOD to ensure vendors provide consistent order and
 ## Usage
 ```
 $ validator read
-File: temp/test.mrc
+Which vendor are you working with?
+#> eastview
+Which file would like to open?
+#> temp/test.mrc
 ```
 
 RL Shelf Ready Record Validator provides a command line interface to view and validate MARC records.
-After entering a command, users are prompted to input a file to be read by the tool. This tool can read .mrc files.
+After entering a command, users are prompted to input the name of a vendor whose records will be retrieved and/or validated. The user will then be prompted to enter a file they would like to open and have read by the tool. This tool can read .mrc files.
 
 ### Commands
 The following information is also available using `validator --help`
 
 #### Available commands
 
+##### Reading and validating MARC records
 `$ validator read`
 
-Read and print MARC records one-by-one to terminal
+Read and print MARC records one-by-one to terminal.
 
 `$ validator read-input`
 
-Convert records and print to terminal. Records are converted to a dict as it would be read by the validator
+Convert records and print to terminal. Records are converted to a dict as it would be read by the validator.
 
 `$ validator validate-all`
 
@@ -51,13 +55,31 @@ Validates all records in a file and prints output to terminal.
 
 Validates all records in a file and prints summary of errors to terminal.
 
+`$ validator validate-raw`
+
+Validates all records in a file and prints raw error output to terminal.
+
 `$ validator export`
 
-Writes error report to [google sheet](https://docs.google.com/spreadsheets/d/1ZYuhMIE1WiduV98Pdzzw7RwZ08O-sJo7HJihWVgSOhQ/edit?usp=sharing)
+Writes error report to [google sheet](https://docs.google.com/spreadsheets/d/1ZYuhMIE1WiduV98Pdzzw7RwZ08O-sJo7HJihWVgSOhQ/edit?usp=sharing).
+
+##### Connecting via SFTP and retrieving files
+When asked by the tool "Which file would you like to open?", enter "none" if only listing or retrieving records via SFTP.
+`$ validator list-all-files`
+
+Connects to vendor SFTP and lists all available files.
+
+`$ validator list-recent-files`
+
+Connects to vendor SFTP and lists files uploaded in previous week.
+
+`$ validator get-recent-files`
+
+Connects to vendor SFTP and retrieves files uploaded in previous week.
 
 #### Combining commands
 
-Commands can also be chained to run together on the same file. 
+Certain commands can also be chained to run together on the same file. 
 
 For example, `$ validator read validate-brief` will read each MARC record and print it to the terminal and when it has finished printing each record it will print a validation summary. Similarly, `$ validator read validate-all` will read a MARC record, print the record to the terminal, validate the MARC record and print the error output to the terminal.
 
@@ -65,7 +87,10 @@ For example, `$ validator read validate-brief` will read each MARC record and pr
 Validate records and export to spreadsheet
 ```
 $ validator validate-all export
-File: temp/tests.mrc
+Which vendor are you working with? (eastview, amalivre)
+#> eastview
+Which file would like to open?
+#> temp/tests.mrc
 
 Checking all records...
 
@@ -84,7 +109,10 @@ Record #4 contains 6 error(s)
 Read and validate records
 ```
 $ validator read validate-all
-File: temp/tests.mrc
+Which vendor are you working with? (eastview, amalivre)
+#> eastview
+Which file would like to open?
+#> temp/tests.mrc
 
 Checking all records...
 Printing record #1
@@ -102,4 +130,34 @@ Printing record #1
 
 Record #1 (control_no on1381158740) is valid.
 
+```
+Connect via SFTP and list recent files
+```
+$ validator list-recent-files
+Which vendor are you working with? (eastview, amalivre): eastview
+Which file would like to open?: none
+
+20050624_NYPL.mrc is new today (2024-04-17) and was created on 2024-04-12
+20051009_NYPL.mrc is new today (2024-04-17) and was created on 2024-04-12
+```
+Connect via SFTP and list all files
+```
+$ validator list-all-files
+Which vendor are you working with? (eastview, amalivre): eastview
+Which file would like to open?: none
+
+20050470_NYPL.mrc was created 30 days ago on 2024-03-18
+20050468_NYPL.mrc was created 22 days ago on 2024-03-25
+20050465_NYPL.mrc was created 18 days ago on 2024-03-29
+20050624_NYPL.mrc was created 4 days ago on 2024-04-12
+20051009_NYPL.mrc was created 4 days ago on 2024-04-1
+```
+Connect via SFTP and retrieve recent files
+```
+$ validator get-recent-files
+Which vendor are you working with? (eastview, amalivre): eastview
+Which file would like to open?: none
+
+20050624_NYPL.mrc is new today, 2024-04-17
+20051009_NYPL.mrc is new today, 2024-04-17
 ```

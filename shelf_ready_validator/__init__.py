@@ -25,7 +25,7 @@ console = Console(tab_size=5, theme=theme)
 @click.option(
     "--vendor",
     "vendor",
-    prompt="Which vendor are you working with?",
+    prompt="Which vendor are you working with?", type=click.Choice(["eastview", "amalivre"]),
     help="The vendor whose records you would like to retrieve or validate.",
 )
 @click.option("--file","file", prompt="Which file would like to open?", help="The MARC file you would like to open.",)
@@ -103,7 +103,7 @@ def list_recent_files(ctx):
 @cli.command("get-recent-files", short_help="get recent records via sftp")
 @click.pass_obj
 @generator
-def retrieve_records(ctx):
+def get_recent_files(ctx):
     """
     Retrieves records from vendor SFTP site that were created in the last week.  
     """
