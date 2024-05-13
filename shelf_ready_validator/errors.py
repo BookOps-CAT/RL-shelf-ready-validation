@@ -155,7 +155,7 @@ def match_errors(error: ErrorDetails) -> dict:
         ):
             new_error["msg"] = "Order location does not match a valid location"
             return new_error
-        case ("literal_error", {"expected": "'043'"}):
+        case ("literal_error", {"expected": "'43'"}):
             new_error["msg"] = "Invalid item agency code"
             return new_error
         case (

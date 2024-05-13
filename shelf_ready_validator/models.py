@@ -76,7 +76,7 @@ class ItemNYPLRL(BaseModel):
     item_message: Optional[Annotated[str, Field(..., pattern=r"^[^a-z]+")]] = None
     message: Optional[Annotated[str, Field(..., pattern=r"^[^a-z]+")]] = None
     item_vendor_code: Annotated[Literal["EVP", "AUXAM"], Field(...)]
-    item_agency: Literal["043"]
+    item_agency: Literal["43"]
     item_location: Annotated[
         Literal[
             "rcmb2",
