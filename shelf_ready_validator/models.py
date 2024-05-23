@@ -77,7 +77,7 @@ class ItemNYPLRL(BaseModel):
     message: Optional[Annotated[str, Field(..., pattern=r"^[^a-z]+")]] = None
     item_vendor_code: Annotated[Literal["EVP", "AUXAM", "LEILA"], Field(...)]
     item_agency: Literal["43"]
-    item_location: Annotated[
+    item_location: Optional[
         Literal[
             "rcmb2",
             "rcmf2",
@@ -89,10 +89,9 @@ class ItemNYPLRL(BaseModel):
             "rcpm2",
             "rcpt2",
             "rc2cf",
-        ],
-        Field(...),
-    ]
-    item_type: str = Field(...)
+        ]
+    ] = None
+    item_type: Optional[Literal["55", "2"]] = None
     library: Annotated[Literal["RL"], Field(...)]
     item_ind1: Literal[" "]
     item_ind2: Literal["1"]
@@ -165,8 +164,18 @@ class MonographRecord(BaseModel):
                         "MAF",
                     ),
                     (
+                        "rcmf2",
+                        None,
+                        "MAF",
+                    ),
+                    (
                         "rcmg2",
                         "55",
+                        "MAG",
+                    ),
+                    (
+                        "rcmg2",
+                        None,
                         "MAG",
                     ),
                     (
@@ -174,6 +183,9 @@ class MonographRecord(BaseModel):
                         "55",
                         "MAL",
                     ),
+                    ("rc2ma", None, "MAL"),
+                    (None, None, "MAL"),
+                    (None, "55", "MAL"),
                     (
                         "rcmp2",
                         "2",
@@ -190,8 +202,18 @@ class MonographRecord(BaseModel):
                         "PAH",
                     ),
                     (
+                        "rcph2",
+                        None,
+                        "PAH",
+                    ),
+                    (
                         "rcpm2",
                         "55",
+                        "PAM",
+                    ),
+                    (
+                        "rcpm2",
+                        None,
                         "PAM",
                     ),
                     (
@@ -200,8 +222,18 @@ class MonographRecord(BaseModel):
                         "PAT",
                     ),
                     (
+                        "rcpt2",
+                        None,
+                        "PAT",
+                    ),
+                    (
                         "rc2cf",
                         "55",
+                        "SC",
+                    ),
+                    (
+                        "rc2cf",
+                        None,
                         "SC",
                     ),
                 ]

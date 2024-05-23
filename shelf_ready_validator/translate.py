@@ -1,6 +1,6 @@
-from pymarc import Record, Field
+from pymarc import Record
 from enum import Enum
-from typing import Generator
+from typing import Generator, Union
 
 from bookops_marc import SierraBibReader
 
@@ -50,14 +50,12 @@ class VendorRecord:
         self,
         record: Record,
     ) -> None:
-        
+
         self.record = record
         self.dict_input = self._get_dict_input()
         self.material_type = self._get_material_type()
 
-
-
-    def _get_field_subfield(self, field: str, subfield: str) -> str:
+    def _get_field_subfield(self, field: str, subfield: str) -> Union[str, KeyError]:
         """
         Gets value of subfield and returns it to be assigned to a variable
         if subfield does not exist, returns KeyError
@@ -69,26 +67,18 @@ class VendorRecord:
         except KeyError as e:
             return e
 
-    def _get_field_indicators(self, field: Field, indicator: str) -> str:
+    def _get_field_indicators(self, field: str, indicator: str) -> Union[str, KeyError]:
         """
         Gets value of subfield and returns it to be assigned to a variable
         if subfield does not exist, returns KeyError
         KeyError can be stripped out before reading input into validator
         """
-        if indicator == "indicator1":
-            try:
-                field = self.record[field]
-                field_indicator = field.indicator1
-                return field_indicator
-            except KeyError as e:
-                return e
-        if indicator == "indicator2":
-            try:
-                field = self.record[field]
-                field_indicator = field.indicator2
-                return field_indicator
-            except KeyError as e:
-                return e
+        try:
+            marc_field = self.record[field]
+            field_indicator = getattr(marc_field, f"{indicator}")
+            return field_indicator
+        except KeyError as e:
+            return e
 
     def _get_dict_input(self) -> dict:
         """
@@ -162,7 +152,9 @@ class VendorRecord:
         for subject in subjects:
             subfield_v = subject.get_subfields("v")
             subject_subfield_v.append(subfield_v)
-        subject_subfield_list = [item for listed in subject_subfield_v for item in listed]
+        subject_subfield_list = [
+            item for listed in subject_subfield_v for item in listed
+        ]
         physical_desc = self.record.physicaldescription
         field_300a = physical_desc[0].get_subfields("a")
         split_300a = field_300a[0].split()
@@ -183,7 +175,7 @@ class VendorRecord:
                 return "monograph_record"
         else:
             return "monograph_record"
-        
+
 
 def read_marc_records(file: str) -> Generator[Record, None, None]:
     """

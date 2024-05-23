@@ -40,13 +40,9 @@ testpaths = ["tests"]
 relative_files = true
 source = ["."]
 
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
-
 [tool.black]
 line-length = 88
-target-version = ['py310']
+target-version = ['py310', 'py311', 'py312']
 include = '\.pyi?$'
 exclude = '''
 (
@@ -65,3 +61,7 @@ exclude = '''
     | temp.py
 )
 '''
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
