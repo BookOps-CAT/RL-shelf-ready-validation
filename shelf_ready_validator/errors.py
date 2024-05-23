@@ -123,7 +123,7 @@ def match_errors(error: ErrorDetails) -> dict:
             return new_error
         case (
             "literal_error",
-            {"expected": "'EVP' or 'AUXAM'"},
+            {"expected": "'EVP', 'AUXAM', or 'LEILA'"},
         ):
             new_error["msg"] = "Invalid vendor code"
             return new_error

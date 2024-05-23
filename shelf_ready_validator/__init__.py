@@ -7,7 +7,7 @@ from functools import update_wrapper
 from shelf_ready_validator.models import MonographRecord, OtherMaterialRecord
 from shelf_ready_validator.errors import format_errors
 from shelf_ready_validator.sheet import write_sheet
-from shelf_ready_validator.connect import sftpConnection
+from shelf_ready_validator.connect import ftpConnection, sftpConnection
 from shelf_ready_validator.translate import VendorRecord, read_marc_records
 from datetime import datetime
 
@@ -25,16 +25,26 @@ console = Console(tab_size=5, theme=theme)
 @click.option(
     "--vendor",
     "vendor",
-    prompt="Which vendor are you working with?", type=click.Choice(["eastview", "amalivre"]),
+    prompt="Which vendor are you working with?",
+    type=click.Choice(["eastview", "amalivre", "leila"]),
     help="The vendor whose records you would like to retrieve or validate.",
 )
-@click.option("--file","file", prompt="Which file would like to open?", help="The MARC file you would like to open.",)
+@click.option(
+    "--file",
+    "file",
+    prompt="Which file would like to open?",
+    help="The MARC file you would like to open.",
+)
 @click.pass_context
 def cli(ctx, vendor, file):
     """
     Read and validate MARC records
     """
-    ctx.obj = {"file": f"{file.split('/')[-1]}", "filepath": file, "vendor_name": vendor}
+    ctx.obj = {
+        "file": f"{file.split('/')[-1]}",
+        "filepath": file,
+        "vendor_name": vendor,
+    }
 
 
 @cli.result_callback()
@@ -53,6 +63,7 @@ def process_commands(processors, vendor, file):
     for _ in reader:
         pass
 
+
 def processor(f):
     """
     A decorator for all functions that process MARC data or validation data.
@@ -66,6 +77,7 @@ def processor(f):
 
     return update_wrapper(new_func, f)
 
+
 def generator(f):
     """Similar to the :func:`processor` but passes through old values
     unchanged and does not pass through the values as parameter.
@@ -78,36 +90,57 @@ def generator(f):
 
     return update_wrapper(new_func, f)
 
-@cli.command("list-all-files", short_help="list all files on vendor sftp")
+
+@cli.command("list-all-files", short_help="list all files on vendor ftp/sftp")
 @click.pass_obj
 @generator
 def list_vendor_files(ctx):
     """
-    Lists all files on vendor SFTP site.
+    Lists all files on vendor FTP/SFTP site.
     """
-    vendor_connect = sftpConnection(ctx["vendor_name"])
+    match ctx["vendor_name"]:
+        case "eastview":
+            vendor_connect = sftpConnection(ctx["vendor_name"])
+        case "leila":
+            vendor_connect = ftpConnection(ctx["vendor_name"])
+        case _:
+            raise ValueError(f"Missing FTP/SFTP credentials for {ctx['vendor_name']}")
     vendor_connect.list_all_files()
     yield ctx["vendor_name"]
 
-@cli.command("list-recent-files", short_help="list recent files on vendor sftp")
+
+@cli.command("list-recent-files", short_help="list recent files on vendor ftp/sftp")
 @click.pass_obj
 @generator
 def list_recent_files(ctx):
     """
-    Lists files on vendor SFTP site that were created in the last week.
+    Lists files on vendor FTP/SFTP site that were created in the last week.
     """
-    vendor_connect = sftpConnection(ctx["vendor_name"])
+    match ctx["vendor_name"]:
+        case "eastview":
+            vendor_connect = sftpConnection(ctx["vendor_name"])
+        case "leila":
+            vendor_connect = ftpConnection(ctx["vendor_name"])
+        case _:
+            raise ValueError(f"Missing FTP/SFTP credentials for {ctx['vendor_name']}")
     vendor_connect.list_recent_records()
     yield ctx["vendor_name"]
+
 
 @cli.command("get-recent-files", short_help="get recent records via sftp")
 @click.pass_obj
 @generator
 def get_recent_files(ctx):
     """
-    Retrieves records from vendor SFTP site that were created in the last week.  
+    Retrieves records from vendor FTP/SFTP site that were created in the last week.
     """
-    vendor_connect = sftpConnection(ctx["vendor_name"])
+    match ctx["vendor_name"]:
+        case "eastview":
+            vendor_connect = sftpConnection(ctx["vendor_name"])
+        case "leila":
+            vendor_connect = ftpConnection(ctx["vendor_name"])
+        case _:
+            raise ValueError(f"Missing FTP/SFTP credentials for {ctx['vendor_name']}")
     vendor_connect.get_recent_records()
     yield ctx["vendor_name"]
 
@@ -149,7 +182,6 @@ def read_input(reader):
             click.pause(info="Press any key to read next record")
         console.print("No more records")
         break
-
 
 
 @cli.command("validate-all", short_help="validate all records")
@@ -326,6 +358,7 @@ def export_error_report(ctx, output):
             rows,
         )
         yield output_df
+
 
 def main():
     cli()
