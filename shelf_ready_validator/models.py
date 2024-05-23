@@ -75,7 +75,7 @@ class ItemNYPLRL(BaseModel):
     item_volume: Optional[str] = None
     item_message: Optional[Annotated[str, Field(..., pattern=r"^[^a-z]+")]] = None
     message: Optional[Annotated[str, Field(..., pattern=r"^[^a-z]+")]] = None
-    item_vendor_code: Annotated[Literal["EVP", "AUXAM"], Field(...)]
+    item_vendor_code: Annotated[Literal["EVP", "AUXAM", "LEILA"], Field(...)]
     item_agency: Literal["43"]
     item_location: Annotated[
         Literal[
@@ -122,7 +122,7 @@ class MonographRecord(BaseModel):
     bib_call_no: Annotated[str, Field(pattern=r"^ReCAP 23-\d{6}$|^ReCAP 24-\d{6}$")]
     bib_call_no_ind1: Literal["8"]
     bib_call_no_ind2: Literal[" "]
-    bib_vendor_code: Literal["EVP", "AUXAM"]
+    bib_vendor_code: Literal["EVP", "AUXAM", "LEILA"]
     lcc: str
     invoice_date: Annotated[str, Field(pattern=r"^\d{6}$")]
     invoice_price: Annotated[str, Field(pattern=r"^\d{3,}$")]
@@ -261,7 +261,7 @@ class OtherMaterialRecord(BaseModel):
         "pamphlet",
         "non-standard_binding_packaging",
     ]
-    bib_vendor_code: Literal["EVP", "AUXAM"]
+    bib_vendor_code: Literal["EVP", "AUXAM", "LEILA"]
     lcc: str
     invoice_date: Annotated[str, Field(pattern=r"^\d{6}$")]
     invoice_price: Annotated[str, Field(pattern=r"^\d{3,}$")]

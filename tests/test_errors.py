@@ -300,9 +300,9 @@ def test_extra_field_error(valid_pamphlet_record):
             {
                 "type": "literal_error",
                 "loc": ("bib_vendor_code",),
-                "msg": "Input should be 'AUXAM' or 'EVP'",
+                "msg": "Input should be 'EVP', 'AUXAM', or 'LEILA'",
                 "input": "EVIS",
-                "ctx": {"expected": "'EVP' or 'AUXAM'"},
+                "ctx": {"expected": "'EVP', 'AUXAM', or 'LEILA'"},
                 "url": "https://errors.pydantic.dev/2.5/v/literal_error",
             },
             "Invalid vendor code",
@@ -311,9 +311,9 @@ def test_extra_field_error(valid_pamphlet_record):
             {
                 "type": "literal_error",
                 "loc": ("items", 0, "RL", "item_vendor_code"),
-                "msg": "Input should be 'AUXAM' or 'EVP'",
+                "msg": "Input should be 'EVP', 'AUXAM', or 'LEILA'",
                 "input": "EVIS",
-                "ctx": {"expected": "'EVP' or 'AUXAM'"},
+                "ctx": {"expected": "'EVP', 'AUXAM', or 'LEILA'"},
                 "url": "https://errors.pydantic.dev/2.5/v/literal_error",
             },
             "Invalid vendor code",
