@@ -7,7 +7,7 @@ from functools import update_wrapper
 from shelf_ready_validator.models import MonographRecord, OtherMaterialRecord
 from shelf_ready_validator.errors import format_errors
 from shelf_ready_validator.sheet import write_sheet
-from shelf_ready_validator.connect import sftpConnection
+from shelf_ready_validator.connect import ftpConnection, sftpConnection
 from shelf_ready_validator.translate import VendorRecord, read_marc_records
 from datetime import datetime
 
@@ -78,25 +78,37 @@ def generator(f):
 
     return update_wrapper(new_func, f)
 
-@cli.command("list-all-files", short_help="list all files on vendor sftp")
+@cli.command("list-all-files", short_help="list all files on vendor ftp/sftp")
 @click.pass_obj
 @generator
 def list_vendor_files(ctx):
     """
-    Lists all files on vendor SFTP site.
+    Lists all files on vendor FTP/SFTP site.
     """
-    vendor_connect = sftpConnection(ctx["vendor_name"])
+    match ctx["vendor_name"]:
+        case "eastview":
+            vendor_connect = sftpConnection(ctx["vendor_name"])
+        case "leila":
+            vendor_connect = ftpConnection(ctx["vendor_name"])
+        case _:
+            raise ValueError(f"Missing FTP/SFTP credentials for {ctx["vendor_name"]}")
     vendor_connect.list_all_files()
     yield ctx["vendor_name"]
 
-@cli.command("list-recent-files", short_help="list recent files on vendor sftp")
+@cli.command("list-recent-files", short_help="list recent files on vendor ftp/sftp")
 @click.pass_obj
 @generator
 def list_recent_files(ctx):
     """
-    Lists files on vendor SFTP site that were created in the last week.
+    Lists files on vendor FTP/SFTP site that were created in the last week.
     """
-    vendor_connect = sftpConnection(ctx["vendor_name"])
+    match ctx["vendor_name"]:
+        case "eastview":
+            vendor_connect = sftpConnection(ctx["vendor_name"])
+        case "leila":
+            vendor_connect = ftpConnection(ctx["vendor_name"])
+        case _:
+            raise ValueError(f"Missing FTP/SFTP credentials for {ctx["vendor_name"]}")
     vendor_connect.list_recent_records()
     yield ctx["vendor_name"]
 
@@ -105,9 +117,15 @@ def list_recent_files(ctx):
 @generator
 def get_recent_files(ctx):
     """
-    Retrieves records from vendor SFTP site that were created in the last week.  
+    Retrieves records from vendor FTP/SFTP site that were created in the last week.  
     """
-    vendor_connect = sftpConnection(ctx["vendor_name"])
+    match ctx["vendor_name"]:
+        case "eastview":
+            vendor_connect = sftpConnection(ctx["vendor_name"])
+        case "leila":
+            vendor_connect = ftpConnection(ctx["vendor_name"])
+        case _:
+            raise ValueError(f"Missing FTP/SFTP credentials for {ctx["vendor_name"]}")
     vendor_connect.get_recent_records()
     yield ctx["vendor_name"]
 
