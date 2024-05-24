@@ -1,4 +1,4 @@
-from typing import Generator
+from typing import Generator, Any
 import os.path
 from pymarc import MARCReader, Record
 from google.auth.transport.requests import Request
@@ -64,3 +64,11 @@ def write_sheet(
         return result
     except HttpError as error:
         return error
+
+
+def material_type_validator(m: Any) -> str:
+    material_type = getattr(m, "material_type")
+    if material_type == "monograph_record":
+        return "monograph_record"
+    else:
+        return "other"

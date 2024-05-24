@@ -4,11 +4,10 @@ from pydantic import ValidationError
 from rich.console import Console
 from rich.theme import Theme
 from functools import update_wrapper
-from shelf_ready_validator.models import MonographRecord, OtherMaterialRecord
+from shelf_ready_validator.models import VendorRecord
 from shelf_ready_validator.errors import format_errors
 from shelf_ready_validator.utils import write_sheet, read_marc_records
 from shelf_ready_validator.connect import ftpConnection, sftpConnection
-from shelf_ready_validator.translate import VendorRecord
 from datetime import datetime
 
 theme = Theme(
@@ -163,171 +162,193 @@ def read_marc(reader):
         break
 
 
-@cli.command("read-input", short_help="print records as dictionary")
+# @cli.command("read-input", short_help="print records as dictionary")
+# @processor
+# def read_input(reader):
+#     """
+#     Converts MARC record to dict input that is used by validator
+#     Prints dict to terminal
+#     """
+#     n = 0
+#     while True:
+#         for record in reader:
+#             n += 1
+#             r = VendorRecord(record)
+#             converted_record = r.dict_input
+#             console.print(f"Printing record [record]#{n}[/]")
+#             console.print(converted_record)
+#             yield converted_record
+#             click.pause(info="Press any key to read next record")
+#         console.print("No more records")
+#         break
+
+
+# @cli.command("validate-all", short_help="validate all records")
+# @processor
+# def validate_all(reader):
+#     """
+#     Loops through file of MARC records and validate each record
+#     Prints errors for each record to terminal
+#     Creates a dict output of errors for each record and adds the output to a list
+#     Returns dict output to use with export command
+#     """
+#     n = 0
+#     output = []
+#     while True:
+#         console.print("\nChecking all records...")
+#         for record in reader:
+#             n += 1
+#             r = VendorRecord(record)
+#             out_report = {
+#                 "vendor_code": r.dict_input["bib_vendor_code"],
+#                 "record_number": n,
+#                 "control_number": record["001"].data,
+#             }
+#             if r.material_type == "monograph_record":
+#                 try:
+#                     MonographRecord(**r.dict_input)
+#                     out_report["valid"] = True
+#                     console.print(
+#                         f"\n[record]Record #{n}[/] (control_no [control_no]{record['001'].data}[/]) is valid."
+#                     )
+#                 except ValidationError as e:
+#                     out_report["valid"] = False
+#                     error_summary = format_errors(e)
+#                     console.print(
+#                         f"\nRecord [record]#{n}[/] contains [error]{error_summary['error_count']} error(s)[/]"
+#                     )
+#                     for error in error_summary["errors"]:
+#                         console.print(
+#                             f"\t{error['msg']}: {error['input']} {error['loc']}"
+#                         )
+#                     del error_summary["errors"]
+#                     out_report.update(error_summary)
+#                 output.append(out_report)
+#             else:
+#                 try:
+#                     OtherMaterialRecord(**r.dict_input)
+#                     out_report["valid"] = True
+#                     console.print(
+#                         f"\n[record]Record #{n}[/] (control_no [control_no]{record['001'].data}[/]) is valid."
+#                     )
+#                 except ValidationError as e:
+#                     out_report["valid"] = False
+#                     error_summary = format_errors(e)
+#                     console.print(
+#                         f"\nRecord [record]#{n}[/] contains [error]{error_summary['error_count']} error(s)[/]"
+#                     )
+#                     for error in error_summary["errors"]:
+#                         console.print(
+#                             f"\t{error['msg']}: {error['input']} {error['loc']}"
+#                         )
+#                     del error_summary["errors"]
+#                     out_report.update(error_summary)
+#                 output.append(out_report)
+#         yield output
+#         break
+
+
+# @cli.command("validate-brief", short_help="get validation summary")
+# @processor
+# def validate_summary(reader):
+#     """
+#     Validate all records in file, print summary of errors
+#     """
+#     total_records = 0
+#     invalid_records = 0
+#     valid_records = 0
+#     errored_records = []
+#     while True:
+#         for record in reader:
+#             total_records += 1
+#             r = VendorRecord(record)
+#             control_number = record["001"].data
+#             if r.material_type == "monograph_record":
+#                 try:
+#                     MonographRecord(**r.dict_input)
+#                     valid_records += 1
+#                 except ValidationError as e:
+#                     invalid_records += 1
+#                     error_count = e.error_count()
+#                     error_output = (control_number, error_count)
+#                     errored_records.append(error_output)
+#             else:
+#                 try:
+#                     OtherMaterialRecord(**r.dict_input)
+#                     valid_records += 1
+#                 except ValidationError as e:
+#                     invalid_records += 1
+#                     error_count = e.error_count()
+#                     error_output = (control_number, error_count)
+#                     errored_records.append(error_output)
+#         if invalid_records > 0:
+#             output = f"\nFile contains {total_records} record(s): {valid_records} valid record(s) and [error]{invalid_records} invalid record(s)[/]. \n\n[error]Invalid record list and error count:[/] \n{errored_records} \n\nFor more detailed error information run `validator validate-all`"
+#         else:
+#             output = f"\nFile contains {total_records} valid record(s)"
+#         console.print(output)
+#         yield output
+#         break
+
+
+# @cli.command("validate-raw", short_help="get raw validation errors")
+# @processor
+# def validate_raw(reader):
+#     """
+#     Returns raw validation error output
+#     """
+#     errored_records = []
+#     n = 0
+#     while True:
+#         for record in reader:
+#             n += 1
+#             r = VendorRecord(record)
+#             control_number = record["001"].data
+#             if r.material_type == "monograph_record":
+#                 try:
+#                     MonographRecord(**r.dict_input)
+#                     console.print(
+#                         f"Record # {n} (control no {control_number}) validates"
+#                     )
+#                 except ValidationError as e:
+#                     console.print(
+#                         f"Record #{n} (control no {control_number}) has errors"
+#                     )
+#                     console.print(e.json())
+#                     errored_records.append(e.errors())
+#             else:
+#                 try:
+#                     OtherMaterialRecord(**r.dict_input)
+#                     console.print(
+#                         f"Record # {n} (control no {control_number} validates"
+#                     )
+#                 except ValidationError as e:
+#                     console.print(
+#                         f"Record #{n} (control no {control_number}) has errors"
+#                     )
+#                     console.print(e.json())
+#                     errored_records.append(e.errors())
+#         yield errored_records
+#         break
+
+
+@cli.command("valid", short_help="test validation errors")
 @processor
-def read_input(reader):
+def validate(reader):
     """
-    Converts MARC record to dict input that is used by validator
-    Prints dict to terminal
+    Returns test validation error output
     """
-    n = 0
-    while True:
-        for record in reader:
-            n += 1
-            r = VendorRecord(record)
-            converted_record = r.dict_input
-            console.print(f"Printing record [record]#{n}[/]")
-            console.print(converted_record)
-            yield converted_record
-            click.pause(info="Press any key to read next record")
-        console.print("No more records")
-        break
-
-
-@cli.command("validate-all", short_help="validate all records")
-@processor
-def validate_all(reader):
-    """
-    Loops through file of MARC records and validate each record
-    Prints errors for each record to terminal
-    Creates a dict output of errors for each record and adds the output to a list
-    Returns dict output to use with export command
-    """
-    n = 0
-    output = []
-    while True:
-        console.print("\nChecking all records...")
-        for record in reader:
-            n += 1
-            r = VendorRecord(record)
-            out_report = {
-                "vendor_code": r.dict_input["bib_vendor_code"],
-                "record_number": n,
-                "control_number": record["001"].data,
-            }
-            if r.material_type == "monograph_record":
-                try:
-                    MonographRecord(**r.dict_input)
-                    out_report["valid"] = True
-                    console.print(
-                        f"\n[record]Record #{n}[/] (control_no [control_no]{record['001'].data}[/]) is valid."
-                    )
-                except ValidationError as e:
-                    out_report["valid"] = False
-                    error_summary = format_errors(e)
-                    console.print(
-                        f"\nRecord [record]#{n}[/] contains [error]{error_summary['error_count']} error(s)[/]"
-                    )
-                    for error in error_summary["errors"]:
-                        console.print(
-                            f"\t{error['msg']}: {error['input']} {error['loc']}"
-                        )
-                    del error_summary["errors"]
-                    out_report.update(error_summary)
-                output.append(out_report)
-            else:
-                try:
-                    OtherMaterialRecord(**r.dict_input)
-                    out_report["valid"] = True
-                    console.print(
-                        f"\n[record]Record #{n}[/] (control_no [control_no]{record['001'].data}[/]) is valid."
-                    )
-                except ValidationError as e:
-                    out_report["valid"] = False
-                    error_summary = format_errors(e)
-                    console.print(
-                        f"\nRecord [record]#{n}[/] contains [error]{error_summary['error_count']} error(s)[/]"
-                    )
-                    for error in error_summary["errors"]:
-                        console.print(
-                            f"\t{error['msg']}: {error['input']} {error['loc']}"
-                        )
-                    del error_summary["errors"]
-                    out_report.update(error_summary)
-                output.append(out_report)
-        yield output
-        break
-
-
-@cli.command("validate-brief", short_help="get validation summary")
-@processor
-def validate_summary(reader):
-    """
-    Validate all records in file, print summary of errors
-    """
-    total_records = 0
-    invalid_records = 0
-    valid_records = 0
     errored_records = []
-    while True:
-        for record in reader:
-            total_records += 1
-            r = VendorRecord(record)
-            control_number = record["001"].data
-            if r.material_type == "monograph_record":
-                try:
-                    MonographRecord(**r.dict_input)
-                    valid_records += 1
-                except ValidationError as e:
-                    invalid_records += 1
-                    error_count = e.error_count()
-                    error_output = (control_number, error_count)
-                    errored_records.append(error_output)
-            else:
-                try:
-                    OtherMaterialRecord(**r.dict_input)
-                    valid_records += 1
-                except ValidationError as e:
-                    invalid_records += 1
-                    error_count = e.error_count()
-                    error_output = (control_number, error_count)
-                    errored_records.append(error_output)
-        if invalid_records > 0:
-            output = f"\nFile contains {total_records} record(s): {valid_records} valid record(s) and [error]{invalid_records} invalid record(s)[/]. \n\n[error]Invalid record list and error count:[/] \n{errored_records} \n\nFor more detailed error information run `validator validate-all`"
-        else:
-            output = f"\nFile contains {total_records} valid record(s)"
-        console.print(output)
-        yield output
-        break
-
-
-@cli.command("validate-raw", short_help="get raw validation errors")
-@processor
-def validate_raw(reader):
-    """
-    Returns raw validation error output
-    """
-    errored_records = []
     n = 0
     while True:
         for record in reader:
             n += 1
-            r = VendorRecord(record)
-            control_number = record["001"].data
-            if r.material_type == "monograph_record":
-                try:
-                    MonographRecord(**r.dict_input)
-                    console.print(
-                        f"Record # {n} (control no {control_number}) validates"
-                    )
-                except ValidationError as e:
-                    console.print(
-                        f"Record #{n} (control no {control_number}) has errors"
-                    )
-                    console.print(e.json())
-                    errored_records.append(e.errors())
-            else:
-                try:
-                    OtherMaterialRecord(**r.dict_input)
-                    console.print(
-                        f"Record # {n} (control no {control_number} validates"
-                    )
-                except ValidationError as e:
-                    console.print(
-                        f"Record #{n} (control no {control_number}) has errors"
-                    )
-                    console.print(e.json())
-                    errored_records.append(e.errors())
+            try:
+                VendorRecord.from_marc(record)
+                console.print(f"Record # {n} validates")
+            except ValidationError as e:
+                console.print(f"Record #{n} has errors")
+                console.print(e.errors())
+                errored_records.append(e.errors())
         yield errored_records
         break
 
