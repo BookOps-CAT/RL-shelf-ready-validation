@@ -1,7 +1,6 @@
 from typing import Any
 from pydantic import ValidationError
 from pydantic_core import ErrorDetails
-from shelf_ready_validator.translate import RLMarcEncoding
 
 
 def missing_errors(error: ErrorDetails) -> dict:
@@ -23,11 +22,11 @@ def missing_errors(error: ErrorDetails) -> dict:
     if error["loc"][0] == "items" and len(error["loc"]) == 4:
         new_error["loc"] = (
             f"item_{error['loc'][1]}",
-            RLMarcEncoding[str(error["loc"][3])].value,
+            str(error["loc"][3]),
         )
         return new_error
     else:
-        new_error["loc"] = RLMarcEncoding[str(error["loc"][0])].value
+        new_error["loc"] = str(error["loc"][0])
         return new_error
 
 
@@ -46,12 +45,11 @@ def extra_errors(error: ErrorDetails) -> dict:
     new_error: dict = {}
     new_error.update(error)
     if type(error["input"]) is str:
-        new_error["loc"] = RLMarcEncoding[str(error["loc"][0])].value
+        new_error["loc"] = str(error["loc"][0])
         return new_error
     else:
         new_error["loc"] = [
-            f"{RLMarcEncoding[str(error['loc'][0])].value}_" + str(i)
-            for i in range(len(error["input"]))
+            f"{str(error['loc'][0])}_" + str(i) for i in range(len(error["input"]))
         ]
         return new_error
 
@@ -73,9 +71,9 @@ def item_order_errors(error: ErrorDetails) -> dict:
     new_error.update(error)
     new_error["loc"] = (
         f"item_{error['loc'][0]}",
-        str(RLMarcEncoding[str(error["loc"][1])].value),
-        str(RLMarcEncoding[str(error["loc"][2])].value),
-        str(RLMarcEncoding[str(error["loc"][3])].value),
+        str(error["loc"][1]),
+        str(error["loc"][2]),
+        str(error["loc"][3]),
     )
     return new_error
 
@@ -99,15 +97,15 @@ def match_errors(error: ErrorDetails) -> dict:
     if error["loc"][0] == "items" and len(error["loc"]) == 4:
         new_error["loc"] = (
             f"item_{error['loc'][1]}",
-            RLMarcEncoding[str(error["loc"][3])].value,
+            str(error["loc"][3]),
         )
     elif error["loc"][0] == "items" and len(error["loc"]) == 2:
         new_error["loc"] = (
             f"item_{error['loc'][1]}",
-            RLMarcEncoding[str(error["loc"][0])].value,
+            str(error["loc"][0]),
         )
     else:
-        new_error["loc"] = RLMarcEncoding[str(error["loc"][0])].value
+        new_error["loc"] = str(error["loc"][0])
     match (error["type"], error["ctx"]):
         case (
             "literal_error",

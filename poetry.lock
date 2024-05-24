@@ -1350,6 +1350,20 @@ files = [
 ]
 
 [[package]]
+name = "types-paramiko"
+version = "3.4.0.20240423"
+description = "Typing stubs for paramiko"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "types-paramiko-3.4.0.20240423.tar.gz", hash = "sha256:aaa98dda232c47886563d66743d3a8b66c432790c596bc3bdd3f17f91be2a8c1"},
+    {file = "types_paramiko-3.4.0.20240423-py3-none-any.whl", hash = "sha256:c56e0d43399a1b909901b1e0375e0ff6ee62e16cd6e00695024abc2e9fe02035"},
+]
+
+[package.dependencies]
+cryptography = ">=37.0.0"
+
+[[package]]
 name = "types-pytz"
 version = "2024.1.0.20240417"
 description = "Typing stubs for pytz"
@@ -1413,4 +1427,4 @@ zstd = ["zstandard (>=0.18.0)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "5c08a96520bc49ccf7c9c6c0a9c406ec7fd09e3a8f971d3b59c65600eb3930c8"
+content-hash = "42b6db92be3c7c309b4a850d7a3c8f39f1fc2660d8617d58e087632c4c1a7f37"

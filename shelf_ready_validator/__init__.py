@@ -6,9 +6,9 @@ from rich.theme import Theme
 from functools import update_wrapper
 from shelf_ready_validator.models import MonographRecord, OtherMaterialRecord
 from shelf_ready_validator.errors import format_errors
-from shelf_ready_validator.sheet import write_sheet
+from shelf_ready_validator.utils import write_sheet, read_marc_records
 from shelf_ready_validator.connect import ftpConnection, sftpConnection
-from shelf_ready_validator.translate import VendorRecord, read_marc_records
+from shelf_ready_validator.translate import VendorRecord
 from datetime import datetime
 
 theme = Theme(
@@ -314,7 +314,7 @@ def validate_raw(reader):
                     console.print(
                         f"Record #{n} (control no {control_number}) has errors"
                     )
-                    console.print(e.errors())
+                    console.print(e.json())
                     errored_records.append(e.errors())
             else:
                 try:
@@ -326,7 +326,7 @@ def validate_raw(reader):
                     console.print(
                         f"Record #{n} (control no {control_number}) has errors"
                     )
-                    console.print(e.errors())
+                    console.print(e.json())
                     errored_records.append(e.errors())
         yield errored_records
         break

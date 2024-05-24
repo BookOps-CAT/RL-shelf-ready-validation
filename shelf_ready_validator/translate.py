@@ -1,46 +1,5 @@
+from typing import Union, Optional
 from pymarc import Record
-from enum import Enum
-from typing import Generator, Union
-
-from bookops_marc import SierraBibReader
-
-
-class RLMarcEncoding(Enum):
-    """
-    A class to translate fields used in the validator to MARC fields/subfields
-    """
-
-    bib_call_no = "852"
-    bib_call_no_ind1 = "852_ind1"
-    bib_call_no_ind2 = "852_ind2"
-    bib_vendor_code = "901$a"
-    lcc = "050$a"
-    invoice_date = "980$a"
-    invoice_price = "980$b"
-    invoice_shipping = "980$c"
-    invoice_tax = "980$d"
-    invoice_net_price = "980$e"
-    invoice_number = "980$f"
-    invoice_copies = "980$g"
-    order_price = "960$s"
-    order_location = "960$t"
-    order_fund = "960$u"
-    order_ind1 = "960_ind1"
-    order_ind2 = "960_ind2"
-    item_call_tag = "949$z"
-    item_call_no = "949$a"
-    item_barcode = "949$i"
-    item_price = "949$p"
-    item_message = "949$u"
-    message = "949$m"
-    item_vendor_code = "949$v"
-    item_agency = "949$h"
-    item_location = "949$l"
-    item_type = "949$t"
-    library = "910$a"
-    item_ind1 = "949_ind1"
-    item_ind2 = "949_ind2"
-    items = "949"
 
 
 class VendorRecord:
@@ -55,28 +14,21 @@ class VendorRecord:
         self.dict_input = self._get_dict_input()
         self.material_type = self._get_material_type()
 
-    def _get_field_subfield(self, field: str, subfield: str) -> Union[str, KeyError]:
+    def _get_field_subfield(
+        self, field: str, subfield: Optional[str] = None
+    ) -> Union[str, KeyError]:
         """
-        Gets value of subfield and returns it to be assigned to a variable
-        if subfield does not exist, returns KeyError
-        KeyError can be stripped out before reading input into validator
-        """
-        try:
-            field_subfield = self.record[field][subfield]
-            return field_subfield
-        except KeyError as e:
-            return e
-
-    def _get_field_indicators(self, field: str, indicator: str) -> Union[str, KeyError]:
-        """
-        Gets value of subfield and returns it to be assigned to a variable
-        if subfield does not exist, returns KeyError
-        KeyError can be stripped out before reading input into validator
+        Gets value of field or field/subfield pair. Returns a KeyError if field
+        and/or subfield does not exist. KeyError can be stripped out before
+        reading input into validator
         """
         try:
-            marc_field = self.record[field]
-            field_indicator = getattr(marc_field, f"{indicator}")
-            return field_indicator
+            if subfield:
+                field_subfield_value = self.record[field][subfield]
+                return field_subfield_value
+            else:
+                field_value = str(self.record[field])
+                return field_value
         except KeyError as e:
             return e
 
@@ -90,9 +42,7 @@ class VendorRecord:
         library = self._get_field_subfield("910", "a")
         record_data = {
             "material_type": self._get_material_type(),
-            "bib_call_no": self._get_field_subfield("852", "h"),
-            "bib_call_no_ind1": self._get_field_indicators("852", "indicator1"),
-            "bib_call_no_ind2": self._get_field_indicators("852", "indicator2"),
+            "bib_call_no": f"{self._get_field_subfield('852')[1:]}",
             "bib_vendor_code": self._get_field_subfield("901", "a"),
             "lcc": self._get_field_subfield("050", "a"),
             "invoice_date": self._get_field_subfield("980", "a"),
@@ -105,8 +55,7 @@ class VendorRecord:
             "order_price": self._get_field_subfield("960", "s"),
             "order_location": self._get_field_subfield("960", "t"),
             "order_fund": self._get_field_subfield("960", "u"),
-            "order_ind1": self._get_field_indicators("960", "indicator1"),
-            "order_ind2": self._get_field_indicators("960", "indicator2"),
+            "order_indicators": f"{self._get_field_subfield('960')[6:8]}",
             "library": library,
         }
         dict_input = {
@@ -126,17 +75,13 @@ class VendorRecord:
                     "item_location": item.get("l"),
                     "item_type": item.get("t"),
                     "library": library,
-                    "item_ind1": item.indicator1,
-                    "item_ind2": item.indicator2,
+                    "item_indicators": f"{self._get_field_subfield('949')[6:8]}",
                 }
                 edited_item = {
                     key: val for key, val in item_output.items() if val is not None
                 }
                 item_list.append(edited_item)
             dict_input["items"] = item_list
-        if dict_input["material_type"] == "monograph_record":
-            del dict_input["library"]
-            return dict_input
         return dict_input
 
     def _get_material_type(self) -> str:
@@ -175,13 +120,3 @@ class VendorRecord:
                 return "monograph_record"
         else:
             return "monograph_record"
-
-
-def read_marc_records(file: str) -> Generator[Record, None, None]:
-    """
-    Reads .mrc file and returns a record
-    """
-    with open(file, "rb") as fh:
-        reader = SierraBibReader(fh)
-        for record in reader:
-            yield record

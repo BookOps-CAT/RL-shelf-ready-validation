@@ -2,8 +2,8 @@ import ftplib
 import paramiko
 import os.path
 import json
-from rich import print
 from datetime import datetime, timedelta
+from rich import print
 
 
 class ftpConnection:
@@ -27,7 +27,8 @@ class ftpConnection:
         ftp_client = ftplib.FTP(
             host=ftp_creds["host"],
             user=ftp_creds["username"],
-            passwd=ftp_creds["password"],)
+            passwd=ftp_creds["password"],
+        )
         ftp_client.encoding = "utf-8"
         ftp_client.login()
         return ftp_client
@@ -61,7 +62,9 @@ class ftpConnection:
         ftp_client.retrlines("LIST", dir_list.append)
         for file in dir_list:
             file_date = datetime.strptime(f"{file[43:49]} {today.year}", "%b %d %Y")
-            print(f"{file[56:]} was created {(today - file_date).days} days ago on {file_date.strftime('%Y-%m-%d')}")
+            print(
+                f"{file[56:]} was created {(today - file_date).days} days ago on {file_date.strftime('%Y-%m-%d')}"
+            )
         ftp_client.close()
 
     def get_recent_records(self):
@@ -82,10 +85,12 @@ class ftpConnection:
         for file in dir_list:
             file_date = datetime.strptime(f"{file[43:49]} {today.year}", "%b %d %Y")
             if file_date >= today - timedelta(days=7):
-                ftp_client.retrbinary(f"RETR {file[56:]}", open(f"{local + file[56:]}", "wb").write)
+                ftp_client.retrbinary(
+                    f"RETR {file[56:]}", open(f"{local + file[56:]}", "wb").write
+                )
                 print(f"{file[56:]} is new today, {today.strftime('%Y-%m-%d')}")
         ftp_client.close()
-    
+
     def list_recent_records(self):
         """
         Checks vendor ftp site and lists each file.
@@ -100,7 +105,9 @@ class ftpConnection:
         for file in dir_list:
             file_date = datetime.strptime(f"{file[43:49]} {today.year}", "%b %d %Y")
             if file_date >= today - timedelta(days=7):
-                print(f"{file[56:]} is new today ({today.strftime('%Y-%m-%d')}) and was created on {file_date.strftime('%Y-%m-%d')}")
+                print(
+                    f"{file[56:]} is new today ({today.strftime('%Y-%m-%d')}) and was created on {file_date.strftime('%Y-%m-%d')}"
+                )
         ftp_client.close()
 
 
@@ -164,7 +171,9 @@ class sftpConnection:
         for file in dir_list:
             file_data = sftp_client.stat(file)
             update_date = datetime.fromtimestamp(file_data.st_mtime)
-            print(f"{file} was created {(today - update_date).days} days ago on {update_date.strftime('%Y-%m-%d')}")
+            print(
+                f"{file} was created {(today - update_date).days} days ago on {update_date.strftime('%Y-%m-%d')}"
+            )
         sftp_client.close()
 
     def get_recent_records(self):
@@ -192,7 +201,7 @@ class sftpConnection:
             todays_files.append(local_path)
         sftp_client.close()
         return todays_files
-    
+
     def list_recent_records(self):
         """
         Checks vendor sftp site and lists each file.
@@ -207,5 +216,7 @@ class sftpConnection:
             file_data = sftp_client.stat(file)
             update_date = datetime.fromtimestamp(file_data.st_mtime)
             if update_date >= today - timedelta(days=7):
-                print(f"{file} is new today ({today.strftime('%Y-%m-%d')}) and was created on {update_date.strftime('%Y-%m-%d')}")
+                print(
+                    f"{file} is new today ({today.strftime('%Y-%m-%d')}) and was created on {update_date.strftime('%Y-%m-%d')}"
+                )
         sftp_client.close()
