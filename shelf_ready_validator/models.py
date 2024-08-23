@@ -1,4 +1,4 @@
-from typing import Literal, Optional, Annotated, Union, List
+from typing import Literal, Optional, Annotated, Union, List, Dict, Protocol
 
 from pydantic import (
     BaseModel,
@@ -7,55 +7,8 @@ from pydantic import (
     ValidationError,
     model_validator,
 )
+from pydantic.dataclasses import dataclass
 from pydantic_core import InitErrorDetails, PydanticCustomError
-
-
-class ItemBPL(BaseModel):
-    """
-    a class to define an item record for BPL collections
-
-    """
-
-    model_config = ConfigDict(validate_default=True, revalidate_instances="always")
-
-    item_call_tag: Literal["8528"]
-    item_call_no: str
-    item_barcode: Annotated[str, Field(pattern=r"^34444[0-9]{9}$")]
-    item_price: Annotated[str, Field(pattern=r"^\d{1,}\.\d{2}$")]
-    item_volume: Optional[str] = None
-    item_message: Optional[str] = None
-    message: Optional[str] = None
-    item_vendor_code: str
-    item_agency: str
-    item_location: str
-    item_type: str
-    library: Annotated[Literal["BPL"], Field(...)]
-    item_ind1: Literal[" "]
-    item_ind2: Literal["1"]
-
-
-class ItemNYPLBL(BaseModel):
-    """
-    a class to define an item record for NYPL Branch Library collections
-
-    """
-
-    model_config = ConfigDict(validate_default=True, revalidate_instances="always")
-
-    item_call_tag: Literal["8528"]
-    item_call_no: str
-    item_barcode: Annotated[str, Field(pattern=r"^33333[0-9]{9}$")]
-    item_price: Annotated[str, Field(pattern=r"^\d{1,}\.\d{2}$")]
-    item_volume: Optional[str] = None
-    item_message: Optional[str] = None
-    message: Optional[str] = None
-    item_vendor_code: str
-    item_agency: str
-    item_location: str
-    item_type: str
-    library: Annotated[Literal["BL"], Field(...)]
-    item_ind1: Literal[" "]
-    item_ind2: Literal["1"]
 
 
 class ItemNYPLRL(BaseModel):
@@ -97,14 +50,43 @@ class ItemNYPLRL(BaseModel):
     item_ind2: Literal["1"]
 
 
-Item = Annotated[
-    Union[ItemNYPLRL, ItemNYPLBL, ItemBPL], Field(..., discriminator="library")
-]
-"""
-When initializing an instance of a MonographRecord, a list of items is created
-The model for each Item to be validated against is selected based on the "library" field
+class Record(BaseModel):
+    """ """
 
-"""
+    model_config = ConfigDict(validate_default=True, revalidate_instances="always")
+
+    material_type: Literal[
+        "monograph_record",
+        "catalogue_raissonne",
+        "dance",
+        "multipart",
+        "pamphlet",
+        "non-standard_binding_packaging",
+    ]
+    bib_call_no: Annotated[
+        Union[
+            Annotated[str, Field(pattern=r"^ReCAP 23-\d{6}$|^ReCAP 24-\d{6}$")], None
+        ],
+        Field(..., default=None, discriminator="material_type"),
+    ]
+    bib_call_no_ind1: Literal["8"]
+    bib_call_no_ind2: Literal[" "]
+    bib_vendor_code: Literal["EVP", "AUXAM", "LEILA"]
+    lcc: str
+    invoice_date: Annotated[str, Field(pattern=r"^\d{6}$")]
+    invoice_price: Annotated[str, Field(pattern=r"^\d{3,}$")]
+    invoice_shipping: Annotated[str, Field(pattern=r"^\d{1,}$")]
+    invoice_tax: Annotated[str, Field(pattern=r"^\d{1,}$")]
+    invoice_net_price: Annotated[str, Field(pattern=r"^\d{3,}$")]
+    invoice_number: str
+    invoice_copies: Annotated[str, Field(pattern=r"^[0-9]+$")]
+    order_price: Annotated[str, Field(pattern=r"^\d{3,}$")]
+    order_location: Literal[
+        "MAB", "MAF", "MAG", "MAL", "MAP", "MAS", "PAD", "PAH", "PAM", "PAT", "SC"
+    ]
+    order_fund: str
+    order_ind1: Literal[" "]
+    order_ind2: Literal[" "]
 
 
 class MonographRecord(BaseModel):

@@ -1,8 +1,6 @@
 from pymarc import Record
 from enum import Enum
-from typing import Generator, Union
-
-from bookops_marc import SierraBibReader
+from typing import Union
 
 
 class RLMarcEncoding(Enum):
@@ -175,13 +173,3 @@ class VendorRecord:
                 return "monograph_record"
         else:
             return "monograph_record"
-
-
-def read_marc_records(file: str) -> Generator[Record, None, None]:
-    """
-    Reads .mrc file and returns a record
-    """
-    with open(file, "rb") as fh:
-        reader = SierraBibReader(fh)
-        for record in reader:
-            yield record
