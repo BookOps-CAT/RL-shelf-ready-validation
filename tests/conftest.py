@@ -1,98 +1,87 @@
 import pytest
 from bookops_marc import Bib
 from pymarc import Field, Subfield
+from shelf_ready_validator.models import (
+    BibCallNoModel,
+    BibVendorCodeModel,
+    LCClassModel,
+    LibraryFieldModel,
+    OrderFieldModel,
+    InvoiceFieldModel,
+    ItemFieldModel,
+    MALOrderItem,
+)
 
 
 @pytest.fixture
-def test_output_data():
-    test_output_data = [
-        [
-            "vendor_code",
-            "record_number",
-            "control_number",
-            "valid",
-            "error_count",
-            "missing_field_count",
-            "missing_fields",
-            "extra_field_count",
-            "extra_fields",
-            "invalid_field_count",
-            "invalid_fields",
-            "other_errors",
-            "other_error_fields",
-        ],
-        [
-            "VENDOR",
-            "1",
-            "on1234567890",
-            "FALSE",
-            "3",
-            "1",
-            "949$i",
-            "0",
-            "[]",
-            "1",
-            "901$a",
-            "[]",
-            "[('item_0', ('949$l', '949$t', '960$t'))]",
-        ],
+def mock_bib_call_no():
+    return BibCallNoModel(ind1="8", ind2=" ", call_no="ReCAP 23-000000")
+
+
+@pytest.fixture
+def mock_bib_vendor_code():
+    return BibVendorCodeModel(ind1=" ", ind2=" ", vendor_code="EVP")
+
+
+@pytest.fixture
+def mock_lc_class():
+    return LCClassModel(ind1=" ", ind2="4", lcc="F00")
+
+
+@pytest.fixture
+def mock_library():
+    return LibraryFieldModel(ind1=" ", ind2=" ", library="RL")
+
+
+@pytest.fixture
+def mock_order_field():
+    return OrderFieldModel(
+        ind1=" ",
+        ind2=" ",
+        order_price="100",
+        order_location="MAL",
+        order_fund="123456",
+    )
+
+
+@pytest.fixture
+def mock_invoice_field():
+    return InvoiceFieldModel(
+        ind1=" ",
+        ind2=" ",
+        invoice_date="240101",
+        invoice_price="100",
+        invoice_shipping="0",
+        invoice_tax="0",
+        invoice_net_price="100",
+        invoice_number="123456",
+        invoice_copies="1",
+    )
+
+
+@pytest.fixture
+def mock_item_fields():
+    return [
+        ItemFieldModel(
+            ind1=" ",
+            ind2="1",
+            item_call_tag="8528",
+            item_call_no="ReCAP 23-000000",
+            item_barcode="33433123456789",
+            item_price="1.00",
+            item_vendor_code="EVP",
+            item_agency="43",
+            item_location="rc2ma",
+            item_type="55",
+        )
     ]
-    return test_output_data
 
 
 @pytest.fixture
-def valid_rl_monograph_record():
-    valid_rl_monograph_record = {
-        "material_type": "monograph_record",
-        "bib_call_no_ind1": "8",
-        "bib_call_no_ind2": " ",
-        "bib_call_no": "ReCAP 23-999999",
-        "bib_vendor_code": "EVP",
-        "lcc": "Z123",
-        "invoice_date": "240101",
-        "invoice_price": "100",
-        "invoice_shipping": "100",
-        "invoice_tax": "000",
-        "invoice_net_price": "200",
-        "invoice_number": "1234567890",
-        "invoice_copies": "1",
-        "order_price": "200",
-        "order_location": "MAB",
-        "order_fund": "123456apprv",
-        "order_ind1": " ",
-        "order_ind2": " ",
-        "items": [
-            {
-                "item_call_tag": "8528",
-                "item_call_no": "ReCAP 23-999999",
-                "item_barcode": "33433678901234",
-                "item_price": "2.00",
-                "item_vendor_code": "EVP",
-                "item_location": "rcmb2",
-                "item_type": "2",
-                "item_agency": "43",
-                "item_message": "FOO",
-                "message": "BAR",
-                "library": "RL",
-                "item_ind1": " ",
-                "item_ind2": "1",
-            },
-            {
-                "item_call_tag": "8528",
-                "item_call_no": "ReCAP 23-999998",
-                "item_barcode": "33433678901234",
-                "item_price": "2.00",
-                "item_vendor_code": "EVP",
-                "item_location": "rcmb2",
-                "item_type": "2",
-                "item_agency": "43",
-                "library": "RL",
-                "item_ind1": " ",
-                "item_ind2": "1",
-            },
-        ],
-    }
-    return valid_rl_monograph_record
+def mock_valid_order_item():
+    return [
+        MALOrderItem(order_loc="MAL", item_loc="rc2ma", item_type="55"),
+    ]
 
 
 @pytest.fixture
@@ -156,7 +145,7 @@ def extra_field_error():
     return extra_field_error
 
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 def stub_record():
     bib = Bib()
     bib.leader = "00820cam a22001935i 4500"
@@ -165,11 +154,9 @@ def stub_record():
     bib.add_field(
         Field(
             tag="050",
-            indicators=["", "4"],
+            indicators=[" ", "4"],
             subfields=[
                 Subfield(code="a", value="DK504.73"),
-                {"a": "DK504.73"},
-                Subfield(code="b", value=".D86 2022"),
             ],
         )
     )
@@ -178,10 +165,14 @@ def stub_record():
             tag="245",
             indicators=["0", "0"],
             subfields=[
-                Subfield(code="a", value="Dunikas Laika grāmata 1812-1858 /"),
+                Subfield(code="a", value="Title :"),
+                Subfield(
+                    code="b",
+                    value="subtitle /",
+                ),
                 Subfield(
                     code="c",
-                    value="atbildīgā redaktore Anita Helviga ; sagatavotāji Agris Dzenis, Mihails Ignats, Inese Veisbuka.",
+                    value="Author",
                 ),
             ],
         )
@@ -191,18 +182,7 @@ def stub_record():
             tag="300",
             indicators=[" ", " "],
             subfields=[
-                Subfield(code="a", value="200 pages :"),
-            ],
-        )
-    )
-    bib.add_field(
-        Field(
-            tag="600",
-            indicators=["1", "0"],
-            subfields=[
-                Subfield(code="a", value="Mucenieks, Jānis,"),
-                Subfield(code="d", value="1800-1885."),
-                Subfield(code="t", value="Laika grāmata."),
+                Subfield(code="a", value="100 pages :"),
             ],
         )
     )
@@ -218,7 +198,7 @@ def stub_record():
     bib.add_field(
         Field(
             tag="901",
-            indicators=["", " "],
+            indicators=[" ", " "],
             subfields=[
                 Subfield(code="a", value="EVP"),
             ],
@@ -235,11 +215,30 @@ def stub_record():
     )
     bib.add_field(
         Field(
+            tag="949",
+            indicators=[" ", "1"],
+            subfields=[
+                Subfield(code="z", value="8528"),
+                Subfield(code="a", value="ReCAP 23-100000"),
+                Subfield(code="c", value="1"),
+                Subfield(code="h", value="43"),
+                Subfield(code="i", value="33433123456789"),
+                Subfield(code="l", value="rcmf2"),
+                Subfield(code="m", value="bar"),
+                Subfield(code="p", value="1.00"),
+                Subfield(code="t", value="55"),
+                Subfield(code="u", value="foo"),
+                Subfield(code="v", value="AUXAM"),
+            ],
+        )
+    )
+    bib.add_field(
+        Field(
             tag="960",
             indicators=[" ", " "],
             subfields=[
                 Subfield(code="s", value="100"),
-                Subfield(code="t", value="MAL"),
+                Subfield(code="t", value="MAF"),
                 Subfield(code="u", value="123456apprv"),
             ],
         )
@@ -249,14 +248,41 @@ def stub_record():
             tag="980",
             indicators=[" ", " "],
             subfields=[
-                Subfield(code="a", value="230918"),
+                Subfield(code="a", value="240101"),
                 Subfield(code="b", value="100"),
                 Subfield(code="c", value="100"),
                 Subfield(code="d", value="000"),
-                Subfield(code="e", value="100"),
-                Subfield(code="f", value="20048818"),
+                Subfield(code="e", value="200"),
+                Subfield(code="f", value="123456"),
                 Subfield(code="g", value="1"),
             ],
         )
     )
     return bib
+
+
+@pytest.fixture(scope="function")
+def stub_record_with_dupes(stub_record):
+    dupe_record = stub_record
+    dupe_record.add_field(
+        Field(tag="050", indicators=[" ", "4"], subfields=[Subfield("h", "foo")])
+    )
+    dupe_record.add_field(
+        Field(tag="852", indicators=["8", " "], subfields=[Subfield("h", "foo")])
+    )
+    dupe_record.add_field(
+        Field(tag="901", indicators=[" ", " "], subfields=[Subfield("a", "foo")])
+    )
+    dupe_record.add_field(
+        Field(tag="910", indicators=[" ", " "], subfields=[Subfield("a", "foo")])
+    )
+    dupe_record.add_field(
+        Field(tag="949", indicators=[" ", "1"], subfields=[Subfield("z", "foo")])
+    )
+    dupe_record.add_field(
+        Field(tag="960", indicators=[" ", " "], subfields=[Subfield("s", "foo")])
+    )
+    dupe_record.add_field(
+        Field(tag="980", indicators=[" ", " "], subfields=[Subfield("a", "foo")])
+    )
+    return dupe_record
