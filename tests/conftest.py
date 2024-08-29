@@ -1,5 +1,5 @@
 import pytest
-from bookops_marc import Bib
+from pymarc import Record
 from pymarc import Field, Subfield
 from shelf_ready_validator.models import (
     BibCallNoModel,
@@ -9,7 +9,7 @@ from shelf_ready_validator.models import (
     OrderFieldModel,
     InvoiceFieldModel,
     ItemFieldModel,
-    MALOrderItem,
+    OrderItem,
 )
 
 
@@ -80,7 +80,7 @@ def mock_item_fields():
 @pytest.fixture
 def mock_valid_order_item():
     return [
-        MALOrderItem(order_loc="MAL", item_loc="rc2ma", item_type="55"),
+        OrderItem(order_location="MAL", item_location="rc2ma", item_type="55"),
     ]
 
 
@@ -147,7 +147,7 @@ def extra_field_error():
 
 @pytest.fixture(scope="function")
 def stub_record():
-    bib = Bib()
+    bib = Record()
     bib.leader = "00820cam a22001935i 4500"
     bib.add_field(Field(tag="008", data="190306s2017    ht a   j      000 1 hat d"))
     bib.add_field(Field(tag="001", data="on1381158740"))

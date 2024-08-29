@@ -1,5 +1,7 @@
 from typing import Annotated, Any, Union, List, Dict, Literal, Optional
 from pydantic import BaseModel, Field, field_validator
+
+# ConfigDict
 from pydantic_core import PydanticCustomError
 
 
@@ -221,6 +223,8 @@ class VendorMonographRecordModel(BaseModel):
 
 class VendorOtherRecordModel(BaseModel):
     """A class to define a generic, valid MARC record"""
+
+    # model_config = ConfigDict(extra="forbid")
 
     leader: Annotated[
         str,

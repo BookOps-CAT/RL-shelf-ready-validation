@@ -9,15 +9,7 @@ from shelf_ready_validator.models import (
     OrderFieldModel,
     InvoiceFieldModel,
     ItemFieldModel,
-    MABMASOrderItem,
-    MAFOrderItem,
-    MAGOrderItem,
-    MALOrderItem,
-    MAPOrderItem,
-    PAHOrderItem,
-    PAMOrderItem,
-    PATOrderItem,
-    SCOrderItem,
+    OrderItem,
     VendorMonographRecordModel,
 )
 
@@ -154,7 +146,7 @@ def test_ItemFieldModel_valid(call_no_value, vendor_code_value, loc_value, type_
 )
 def test_MABMASOrderItem_valid(order_loc_value):
     with does_not_raise():
-        MABMASOrderItem(order_loc=order_loc_value, item_loc="rcmb2", item_type="2")
+        OrderItem(order_location=order_loc_value, item_location="rcmb2", item_type="2")
 
 
 @pytest.mark.parametrize(
@@ -163,7 +155,9 @@ def test_MABMASOrderItem_valid(order_loc_value):
 )
 def test_MAFOrderItem_valid(item_type_value):
     with does_not_raise():
-        MAFOrderItem(order_loc="MAF", item_loc="rcmf2", item_type=item_type_value)
+        OrderItem(
+            order_location="MAF", item_location="rcmf2", item_type=item_type_value
+        )
 
 
 @pytest.mark.parametrize(
@@ -172,7 +166,9 @@ def test_MAFOrderItem_valid(item_type_value):
 )
 def test_MAGOrderItem_valid(item_type_value):
     with does_not_raise():
-        MAGOrderItem(order_loc="MAG", item_loc="rcmg2", item_type=item_type_value)
+        OrderItem(
+            order_location="MAG", item_location="rcmg2", item_type=item_type_value
+        )
 
 
 @pytest.mark.parametrize(
@@ -186,14 +182,16 @@ def test_MAGOrderItem_valid(item_type_value):
 )
 def test_MALOrderItem_valid(item_loc_value, item_type_value):
     with does_not_raise():
-        MALOrderItem(
-            order_loc="MAL", item_loc=item_loc_value, item_type=item_type_value
+        OrderItem(
+            order_location="MAL",
+            item_location=item_loc_value,
+            item_type=item_type_value,
         )
 
 
 def test_MAPOrderItem_valid():
     with does_not_raise():
-        MAPOrderItem(order_loc="MAP", item_loc="rcmp2", item_type="2")
+        OrderItem(order_location="MAP", item_location="rcmp2", item_type="2")
 
 
 @pytest.mark.parametrize(
@@ -202,7 +200,9 @@ def test_MAPOrderItem_valid():
 )
 def test_PAHOrderItem_valid(item_type_value):
     with does_not_raise():
-        PAHOrderItem(order_loc="PAH", item_loc="rcph2", item_type=item_type_value)
+        OrderItem(
+            order_location="PAH", item_location="rcph2", item_type=item_type_value
+        )
 
 
 @pytest.mark.parametrize(
@@ -211,7 +211,9 @@ def test_PAHOrderItem_valid(item_type_value):
 )
 def test_PAMOrderItem_valid(item_type_value):
     with does_not_raise():
-        PAMOrderItem(order_loc="PAM", item_loc="rcpm2", item_type=item_type_value)
+        OrderItem(
+            order_location="PAM", item_location="rcpm2", item_type=item_type_value
+        )
 
 
 @pytest.mark.parametrize(
@@ -220,7 +222,9 @@ def test_PAMOrderItem_valid(item_type_value):
 )
 def test_PATOrderItem_valid(item_type_value):
     with does_not_raise():
-        PATOrderItem(order_loc="PAT", item_loc="rcpt2", item_type=item_type_value)
+        OrderItem(
+            order_location="PAT", item_location="rcpt2", item_type=item_type_value
+        )
 
 
 @pytest.mark.parametrize(
@@ -229,7 +233,7 @@ def test_PATOrderItem_valid(item_type_value):
 )
 def test_SCOrderItem_valid(item_type_value):
     with does_not_raise():
-        SCOrderItem(order_loc="SC", item_loc="rc2cf", item_type=item_type_value)
+        OrderItem(order_location="SC", item_location="rc2cf", item_type=item_type_value)
 
 
 def test_VendorMonographRecordModel_valid(

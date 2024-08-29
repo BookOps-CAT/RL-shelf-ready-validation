@@ -321,11 +321,18 @@ def test_Item():
 
 
 def test_OrderItemData():
-    record_1 = OrderItemData(order_loc="MAF", item_loc="rcmf2", item_type="55")
-    record_2 = OrderItemData(order_loc="MAF", item_loc="rcmf2", item_type=None)
+    record_1 = OrderItemData(
+        order_location="MAF", item_location="rcmf2", item_type="55"
+    )
+    record_2 = OrderItemData(
+        order_location="MAF", item_location="rcmf2", item_type=None
+    )
     assert record_1.filter_none_vals() == {
-        "order_loc": "MAF",
-        "item_loc": "rcmf2",
+        "order_location": "MAF",
+        "item_location": "rcmf2",
         "item_type": "55",
     }
-    assert record_2.filter_none_vals() == {"order_loc": "MAF", "item_loc": "rcmf2"}
+    assert record_2.filter_none_vals() == {
+        "order_location": "MAF",
+        "item_location": "rcmf2",
+    }
