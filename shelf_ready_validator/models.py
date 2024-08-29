@@ -1,119 +1,26 @@
-from typing import Annotated, Any, Union, List, Dict, Literal, Optional
-from pydantic import BaseModel, Field, field_validator
+"""This module contains pydantic models for validating vendor-provided MARC records."""
 
-# ConfigDict
+from typing import Annotated, Any, Dict, List, Literal, Union
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from pydantic_core import PydanticCustomError
+from shelf_ready_validator.field_models import (
+    BibCallNoModel,
+    BibVendorCodeModel,
+    InvoiceFieldModel,
+    ItemFieldModel,
+    LCClassModel,
+    LibraryFieldModel,
+    OrderFieldModel,
+)
 
 
-class BibCallNoModel(BaseModel):
+class MonographRecord(BaseModel):
+    """
+    A class to define a valid, full MARC record for a monograph.
 
-    ind1: Literal["8"]
-    ind2: Literal[" ", ""]
-    call_no: Annotated[
-        str, Field(pattern=r"^ReCAP 23-\d{6}$|^ReCAP 24-\d{6}$|^ReCAP 25-\d{6}$")
-    ]
-
-
-class BibVendorCodeModel(BaseModel):
-
-    ind1: Literal[" ", ""]
-    ind2: Literal[" ", ""]
-    vendor_code: Literal["EVP", "AUXAM", "LEILA"]
-
-
-class LCClassModel(BaseModel):
-
-    ind1: Literal[" ", "0", "1"]
-    ind2: Literal["0", "4"]
-    lcc: str
-
-
-class LibraryFieldModel(BaseModel):
-
-    ind1: Literal[" ", ""]
-    ind2: Literal[" ", ""]
-    library: Literal["RL", "BL", "BPL"]
-
-
-class OrderFieldModel(BaseModel):
-
-    ind1: Literal[" ", ""]
-    ind2: Literal[" ", ""]
-    order_price: Annotated[str, Field(pattern=r"^\d{3,}$")]
-    order_location: Literal[
-        "MAB", "MAF", "MAG", "MAL", "MAP", "MAS", "PAD", "PAH", "PAM", "PAT", "SC"
-    ]
-    order_fund: str
-
-
-class InvoiceFieldModel(BaseModel):
-
-    ind1: Literal[" ", ""]
-    ind2: Literal[" ", ""]
-    invoice_date: Annotated[str, Field(pattern=r"^\d{6}$")]
-    invoice_price: Annotated[str, Field(pattern=r"^\d{3,}$")]
-    invoice_shipping: Annotated[str, Field(pattern=r"^\d{1,}$")]
-    invoice_tax: Annotated[str, Field(pattern=r"^\d{1,}$")]
-    invoice_net_price: Annotated[str, Field(pattern=r"^\d{3,}$")]
-    invoice_number: str
-    invoice_copies: Annotated[str, Field(pattern=r"^[0-9]+$")]
-
-
-class ItemFieldModel(BaseModel):
-
-    ind1: Literal[" ", ""]
-    ind2: Literal["1"]
-    item_call_tag: Annotated[Literal["8528"], Field(...)]
-    item_call_no: Annotated[
-        str, Field(..., pattern=r"^ReCAP 23-\d{6}$|^ReCAP 24-\d{6}$|^ReCAP 25-\d{6}$")
-    ]
-    item_barcode: Annotated[str, Field(..., pattern=r"^33433[0-9]{9}$")]
-    item_price: Annotated[str, Field(..., pattern=r"^\d{1,}\.\d{2}$")]
-    item_message: Optional[Annotated[str, Field(..., pattern=r"^[^a-z]+")]] = None
-    message: Optional[Annotated[str, Field(..., pattern=r"^[^a-z]+")]] = None
-    item_vendor_code: Annotated[Literal["EVP", "AUXAM", "LEILA"], Field(...)]
-    item_agency: Literal["43"]
-    item_location: Optional[
-        Literal[
-            "rcmb2",
-            "rcmf2",
-            "rcmg2",
-            "rc2ma",
-            "rcmp2",
-            "rcmb2",
-            "rcph2",
-            "rcpm2",
-            "rcpt2",
-            "rc2cf",
-        ]
-    ] = None
-    item_volume: Optional[str] = None
-    item_type: Optional[Literal["55", "2"]] = None
-
-
-class OrderItem(BaseModel):
-    order_location: Literal[
-        "MAB", "MAF", "MAG", "MAL", "MAP", "MAS", "PAD", "PAH", "PAM", "PAT", "SC"
-    ]
-    item_location: Optional[
-        Literal[
-            "rcmb2",
-            "rcmf2",
-            "rcmg2",
-            "rc2ma",
-            "rcmp2",
-            "rcmb2",
-            "rcph2",
-            "rcpm2",
-            "rcpt2",
-            "rc2cf",
-        ]
-    ] = None
-    item_type: Optional[Literal["55", "2"]] = None
-
-
-class VendorMonographRecordModel(BaseModel):
-    """A class to define a generic, valid MARC record"""
+    Fields marked with the annotation `Field(exclude=True)` are not included when
+    serializing the model.
+    """
 
     leader: Annotated[
         str,
@@ -125,35 +32,18 @@ class VendorMonographRecordModel(BaseModel):
     ]
     fields: List[Dict[str, Union[str, Dict[str, Union[str, List[Dict[str, str]]]]]]]
     bib_call_no: BibCallNoModel
-    bib_vendor_code: BibVendorCodeModel
-    lc_class: Union[LCClassModel, List[LCClassModel]]
-    library_field: LibraryFieldModel
-    material_type: Literal["monograph"]
-    order_field: OrderFieldModel
-    invoice_field: InvoiceFieldModel
-    item_fields: List[ItemFieldModel]
-    order_item_data: List[OrderItem]
+    bib_vendor_code: Annotated[BibVendorCodeModel, Field(exclude=True)]
+    lc_class: Annotated[Union[LCClassModel, List[LCClassModel]], Field(exclude=True)]
+    library_field: Annotated[LibraryFieldModel, Field(exclude=True)]
+    material_type: Annotated[Literal["monograph",], Field(exclude=True)]
+    order_field: Annotated[OrderFieldModel, Field(exclude=True)]
+    invoice_field: Annotated[InvoiceFieldModel, Field(exclude=True)]
+    item_fields: Annotated[List[ItemFieldModel], Field(exclude=True)]
 
-    # order_item_data: List[
-    #     Annotated[
-    #         Union[
-    #             MABMASOrderItem,
-    #             MAFOrderItem,
-    #             MAGOrderItem,
-    #             MALOrderItem,
-    #             MAPOrderItem,
-    #             PAHOrderItem,
-    #             PAMOrderItem,
-    #             PATOrderItem,
-    #             SCOrderItem,
-    #         ],
-    #         Field(discriminator="order_loc"),
-    #     ],
-    # ]
-
-    @field_validator("order_item_data", mode="after")
-    @classmethod
-    def validate_order_item_data(cls, v: List[OrderItem]) -> List[OrderItem]:
+    @model_validator(mode="after")
+    def validate_order_item_data(
+        self: "MonographRecord",
+    ) -> "MonographRecord":
         valid_combos = [
             ("MAB", "rcmb2", "2"),
             ("MAS", "rcmb2", "2"),
@@ -175,18 +65,21 @@ class VendorMonographRecordModel(BaseModel):
             ("SC", "rc2cf", "55"),
             ("SC", "rc2cf", None),
         ]
-        for combo in v:
-            if (
-                combo.order_location,
-                combo.item_location,
-                combo.item_type,
-            ) not in valid_combos:
-                raise PydanticCustomError(
-                    "order_item_location",
-                    f"Invalid combination of item type, order "
-                    f"location and item location: {combo}",
-                )
-        return v
+        item_fields = self.item_fields
+        order_field = self.order_field
+        if item_fields is None or order_field is None:
+            return self
+        else:
+            order_location = order_field.order_location
+            for item in item_fields:
+                combo = (order_location, item.item_location, item.item_type)
+                if combo not in valid_combos:
+                    raise PydanticCustomError(
+                        "order_item_mismatch",
+                        f"Invalid combination of item type, order "
+                        f"location and item location: {combo}",
+                    )
+            return self
 
     @field_validator(
         "bib_call_no",
@@ -221,10 +114,18 @@ class VendorMonographRecordModel(BaseModel):
         return v
 
 
-class VendorOtherRecordModel(BaseModel):
-    """A class to define a generic, valid MARC record"""
+class OtherRecord(BaseModel):
+    """
+    A class to define a valid MARC record without an 852 or 949 field. This model
+    should be used to validate records for catalogues taissonnes, pamphlets,
+    multi-volume works, works with non-standard binding/packaging, and dance
+    materials. Extra fields will be flagged as errors.
 
-    # model_config = ConfigDict(extra="forbid")
+    Fields marked with the annotation `Field(exclude=True)` are not included when
+    serializing the model.
+    """
+
+    model_config = ConfigDict(extra="forbid")
 
     leader: Annotated[
         str,
@@ -235,15 +136,18 @@ class VendorOtherRecordModel(BaseModel):
         ),
     ]
     fields: List[Dict[str, Union[str, Dict[str, Union[str, List[Dict[str, str]]]]]]]
-    bib_vendor_code: BibVendorCodeModel
-    lc_class: LCClassModel
-    library_field: LibraryFieldModel
-    material_type: Literal[
-        "catalogue_raissonne",
-        "dance",
-        "multipart",
-        "pamphlet",
-        "non-standard_binding_packaging",
+    bib_vendor_code: Annotated[BibVendorCodeModel, Field(exclude=True)]
+    lc_class: Annotated[Union[LCClassModel, List[LCClassModel]], Field(exclude=True)]
+    library_field: Annotated[LibraryFieldModel, Field(exclude=True)]
+    material_type: Annotated[
+        Literal[
+            "catalogue_raissonne",
+            "dance",
+            "multipart",
+            "pamphlet",
+            "non-standard_binding_packaging",
+        ],
+        Field(exclude=True),
     ]
-    order_field: OrderFieldModel
-    invoice_field: InvoiceFieldModel
+    order_field: Annotated[OrderFieldModel, Field(exclude=True)]
+    invoice_field: Annotated[InvoiceFieldModel, Field(exclude=True)]

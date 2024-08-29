@@ -1,14 +1,13 @@
-from typing import List, Dict, Any
+from typing import Any, List, Dict, Optional, Union
 from pymarc import Record, Field, Leader
-from shelf_ready_validator.field_models import (
-    Item,
-    OrderItemData,
-    Order,
-    Invoice,
-    Library,
-    LCClass,
-    BibVendorCode,
+from shelf_ready_validator.vendor_fields import (
     BibCallNo,
+    BibVendorCode,
+    Invoice,
+    Item,
+    LCClass,
+    Library,
+    Order,
 )
 
 
@@ -16,16 +15,22 @@ class VendorRecord(Record):
     def __init__(self, leader: Leader, fields: List[Field]):
         self.leader = leader
         self.fields = fields
-
-        self.bib_call_no = self._field_from_marc("852")
-        self.bib_vendor_code = self._field_from_marc("901")
-        self.invoice_field = self._field_from_marc("980")
-        self.item_fields = self._field_from_marc("949")
-        self.lc_class = self._field_from_marc("050")
-        self.library_field = self._field_from_marc("910")
-        self.order_field = self._field_from_marc("960")
-        self.order_item_data = self._get_order_item_data_list()
-        self.material_type = self._get_material_type()
+        self.__bib_call_no: Union[BibCallNo, List[BibCallNo]] = self._field_from_marc(
+            "852"
+        )
+        self.__bib_vendor_code: Union[BibVendorCode, List[BibVendorCode]] = (
+            self._field_from_marc("901")
+        )
+        self.__invoice_field: Union[Invoice, List[Invoice]] = self._field_from_marc(
+            "980"
+        )
+        self.__item_fields: List[Item] = self._field_from_marc("949")
+        self.__lc_class: Union[LCClass, List[LCClass]] = self._field_from_marc("050")
+        self.__library_field: Union[Library, List[Library]] = self._field_from_marc(
+            "910"
+        )
+        self.__order_field: Union[Order, List[Order]] = self._field_from_marc("960")
+        self.material_type: str = self._get_material_type()
 
     def _field_from_marc(self, tag: str) -> Any:
         field_list = [i for i in self.fields if i.tag == tag]
@@ -105,27 +110,6 @@ class VendorRecord(Record):
             case _:
                 return None
 
-    def _get_order_item_data_list(self) -> List[OrderItemData]:
-        order_item_data_list = []
-        if isinstance(self.order_field, list):
-            for order_loc in self.order_field:
-                for item in self.item_fields:
-                    data_combo = OrderItemData(
-                        order_location=order_loc.order_location,
-                        item_location=item.item_location,
-                        item_type=item.item_type,
-                    )
-                    order_item_data_list.append(data_combo)
-        else:
-            for item in self.item_fields:
-                data_combo = OrderItemData(
-                    order_location=self.order_field.order_location,
-                    item_location=item.item_location,
-                    item_type=item.item_type,
-                )
-                order_item_data_list.append(data_combo)
-        return order_item_data_list
-
     def _get_material_type(self) -> str:
         subjects = [i for i in self.subjects if self.subjects is not None]
         subjects_subfield_v = [i.get("v") for i in subjects if i.get("v") is not None]
@@ -136,6 +120,16 @@ class VendorRecord(Record):
         ]
         field300a_str = "".join(field300a)
         if (
+            isinstance(self.__order_field, Order)
+            and self.__order_field.order_location is not None
+            and "PAD" in self.__order_field.order_location
+        ):
+            return "dance"
+        elif isinstance(self.__order_field, list) and "PAD" in [
+            i.order_location for i in self.__order_field if i.order_location is not None
+        ]:
+            return "dance"
+        elif (
             "Catalogues Raisonnes" in subjects_subfield_v
             or "Catalogue Raisonne" in subjects_subfield_v
         ):
@@ -170,33 +164,57 @@ class VendorRecord(Record):
                         }
                     }
                 )
-        if isinstance(self.bib_call_no, list):
-            record["bib_call_no"] = [i.filter_none_vals() for i in self.bib_call_no]
+        if isinstance(self.__bib_call_no, list):
+            record["bib_call_no"] = [i.filter_none_vals() for i in self.__bib_call_no]
         else:
-            record["bib_call_no"] = self.bib_call_no.filter_none_vals()
-        if isinstance(self.bib_vendor_code, list):
+            record["bib_call_no"] = self.__bib_call_no.filter_none_vals()
+        if isinstance(self.__bib_vendor_code, list):
             record["bib_vendor_code"] = [
-                i.filter_none_vals() for i in self.bib_vendor_code
+                i.filter_none_vals() for i in self.__bib_vendor_code
             ]
         else:
-            record["bib_vendor_code"] = self.bib_vendor_code.filter_none_vals()
-        if isinstance(self.lc_class, list):
-            record["lc_class"] = [i.filter_none_vals() for i in self.lc_class]
+            record["bib_vendor_code"] = self.__bib_vendor_code.filter_none_vals()
+        if isinstance(self.__lc_class, list):
+            record["lc_class"] = [i.filter_none_vals() for i in self.__lc_class]
         else:
-            record["lc_class"] = self.lc_class.filter_none_vals()
-        if isinstance(self.library_field, list):
-            record["library_field"] = [i.filter_none_vals() for i in self.library_field]
+            record["lc_class"] = self.__lc_class.filter_none_vals()
+        if isinstance(self.__library_field, list):
+            record["library_field"] = [
+                i.filter_none_vals() for i in self.__library_field
+            ]
         else:
-            record["library_field"] = self.library_field.filter_none_vals()
-        if isinstance(self.order_field, list):
-            record["order_field"] = [i.filter_none_vals() for i in self.order_field]
+            record["library_field"] = self.__library_field.filter_none_vals()
+        if isinstance(self.__order_field, list):
+            record["order_field"] = [i.filter_none_vals() for i in self.__order_field]
         else:
-            record["order_field"] = self.order_field.filter_none_vals()
-        if isinstance(self.invoice_field, list):
-            record["invoice_field"] = [i.filter_none_vals() for i in self.invoice_field]
+            record["order_field"] = self.__order_field.filter_none_vals()
+        if isinstance(self.__invoice_field, list):
+            record["invoice_field"] = [
+                i.filter_none_vals() for i in self.__invoice_field
+            ]
         else:
-            record["invoice_field"] = self.invoice_field.filter_none_vals()
-        record["item_fields"] = [i.filter_none_vals() for i in self.item_fields]
-        record["order_item_data"] = [i.filter_none_vals() for i in self.order_item_data]
+            record["invoice_field"] = self.__invoice_field.filter_none_vals()
+        record["item_fields"] = [i.filter_none_vals() for i in self.__item_fields]
         record["material_type"] = self.material_type
         return record
+
+    def get_control_number(self) -> Optional[str]:
+        for field in self.fields:
+            match field.tag:
+                case "001":
+                    return field.data
+                case "035" if field.get("a") is not None:
+                    return field.get("a")
+                case "020" if field.get("a") is not None:
+                    return field.get("a")
+                case "022" if field.get("a") is not None:
+                    return field.get("a")
+                case "024" if field.get("a") is not None:
+                    return field.get("a")
+                case "010" if field.get("a") is not None:
+                    return field.get("a")
+                case "852" if field.get("h") is not None:
+                    return field.get("h")
+                case _:
+                    continue
+        return None

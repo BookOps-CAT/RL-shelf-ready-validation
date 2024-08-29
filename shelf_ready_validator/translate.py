@@ -44,56 +44,45 @@ class MarcEncoding(Enum):
 
 
 class MarcError:
+    """A class to translate an error from the validator to a more readable format"""
+
     def __init__(self, error: ErrorDetails):
         self.original_error = error
-        self.loc = self._error_loc_to_marc()
         self.type = error.get("type", None)
         self.msg = error.get("msg", None)
         self.ctx = error.get("ctx", None)
-        self.input = error.get("input", None)
         self.url = error.get("url", None)
+        self.input = self._convert_input()
+        self.loc = self._error_loc_to_marc()
 
     def _error_loc_to_marc(self) -> Union[str, Tuple[str, str, str]]:
-        if self.original_error["loc"][0] == "material_type":
+        if self.type == "order_item_mismatch":
+            order = "".join(
+                [
+                    MarcEncoding["order_field"].value,
+                    MarcEncoding["order_location"].value,
+                ]
+            )
+            item_location = "".join(
+                [MarcEncoding["item_fields"].value, MarcEncoding["item_type"].value]
+            )
+            item_type = "".join(
+                [MarcEncoding["item_fields"].value, MarcEncoding["item_location"].value]
+            )
+            return (order, item_location, item_type)
+        elif self.original_error["loc"][0] == "material_type":
             return "material_type"
         elif self.original_error["loc"][0] == "item_fields" and self.original_error[
             "input"
         ] == [{}]:
             return MarcEncoding[str(self.original_error["loc"][0])].value
+        elif (
+            self.type == "extra_forbidden"
+            and self.original_error["loc"][0] == "item_fields"
+        ):
+            return MarcEncoding[str(self.original_error["loc"][0])].value
         elif self.original_error["loc"][0] == "item_fields":
             tag = MarcEncoding[str(self.original_error["loc"][0])].value
-            subfield_code = MarcEncoding[str(self.original_error["loc"][2])].value
-            item_num = f"_{int(self.original_error["loc"][1]) + 1}"
-            return "".join([tag, subfield_code, item_num])
-        elif (
-            self.original_error["loc"][0] == "order_item_data"
-            and self.original_error["type"] == "order_item_location"
-        ):
-            order_tag = MarcEncoding["order_field"].value
-            order_subfield_code = MarcEncoding["order_location"].value
-            item_tag = MarcEncoding["item_fields"].value
-            item_location_subfield_code = MarcEncoding["item_type"].value
-            item_type_subfield_code = MarcEncoding["item_location"].value
-            order = "".join([order_tag, order_subfield_code])
-            item_location = "".join([item_tag, item_location_subfield_code])
-            item_type = "".join([item_tag, item_type_subfield_code])
-            return (order, item_location, item_type)
-
-        elif (
-            self.original_error["loc"][0] == "order_item_data"
-            and self.original_error["loc"][2] == "order_location"
-        ):
-            tag = MarcEncoding["order_field"].value
-            subfield_code = MarcEncoding[str(self.original_error["loc"][2])].value
-            item_num = f"_{int(self.original_error["loc"][1]) + 1}"
-            return "".join([tag, subfield_code, item_num])
-        elif self.original_error["loc"][0] == "order_item_data" and self.original_error[
-            "loc"
-        ][2] in [
-            "item_location",
-            "item_type",
-        ]:
-            tag = MarcEncoding["item_fields"].value
             subfield_code = MarcEncoding[str(self.original_error["loc"][2])].value
             item_num = f"_{int(self.original_error["loc"][1]) + 1}"
             return "".join([tag, subfield_code, item_num])
@@ -103,17 +92,26 @@ class MarcError:
         else:
             return MarcEncoding[str(self.original_error["loc"][0])].value
 
+    def _convert_input(self):
+        input = self.original_error.get("input", None)
+        if input is None:
+            return None
+        elif self.original_error["type"] == "order_item_mismatch":
+            return self.original_error["input"]["order_item_data"][0]
+        else:
+            return input
+
 
 class MarcValidationError:
+    """A class to translate a list of errors from the `errors()` method of a
+    `ValidationError` object to a more readable format"""
+
     def __init__(self, errors: list):
         self.errors = [MarcError(i) for i in errors]
         self.missing_fields = self._get_missing_fields()
         self.extra_fields = self._get_extra_fields()
         self.invalid_fields = self._get_invalid_fields()
-        self.missing_field_count = len(self.missing_fields)
-        self.extra_field_count = len(self.extra_fields)
-        self.invalid_field_count = len(self.invalid_fields)
-        self.other_errors = self._get_other_errors()
+        self.order_item_mismatches = self._get_order_item_mismatch_errors()
 
     def _get_missing_fields(self) -> list:
         return [i for i in self.errors if i.type == "missing"]
@@ -122,82 +120,54 @@ class MarcValidationError:
         return [i for i in self.errors if i.type == "extra_forbidden"]
 
     def _get_invalid_fields(self) -> list:
-        return [
+        invalid_fields = [
             i
             for i in self.errors
-            if i.type in ["literal_error", "string_pattern_mismatch"]
+            if i.type in ["string_pattern_mismatch", "literal_error"]
         ]
 
-    def _get_other_errors(self) -> list:
-        return [
-            i
-            for i in self.errors
-            if i.type
-            not in [
-                "missing",
-                "extra_forbidden",
-                "literal_error",
-                "string_pattern_mismatch",
-            ]
-        ]
+        invalid_field_list = []
+        for error in invalid_fields:
+            invalid_field_list.append(
+                {
+                    "invalid_field": error.loc,
+                    "input": error.input,
+                    "expectation": error.ctx,
+                }
+            )
+        return invalid_field_list
+
+    def _get_order_item_mismatch_errors(self) -> dict:
+        return {
+            "input": [i.input for i in self.errors if i.type == "order_item_mismatch"],
+            "location": [i.loc for i in self.errors if i.type == "order_item_mismatch"],
+        }
 
     def to_dict(self):
-        return {
-            "missing_field_count": self.missing_field_count,
+        out_dict = {
+            "valid": False,
+            "error_count": 0,
+            "missing_field_count": len(self.missing_fields),
             "missing_fields": [i.loc for i in self.missing_fields],
             "extra_field_count": len(self.extra_fields),
             "extra_fields": [i.loc for i in self.extra_fields],
             "invalid_field_count": len(self.invalid_fields),
-            "invalid_fields": [i.loc for i in self.invalid_fields],
-            "other_errors": [i.loc for i in self.other_errors],
+            "invalid_fields": self.invalid_fields,
+            "order_item_mismatches": self.order_item_mismatches,
         }
-
-
-# def count_errors(error_list: list) -> Counter:
-#     error_types: Counter = Counter()
-#     for error in error_list:
-#         error_types[error["type"]] += 1
-#     return error_types
-
-
-# def count_missing_extra_fields(error_list: list) -> dict:
-#     missing_fields = [i for i in error_list if i["type"] == "missing"]
-#     extra_fields = [i for i in error_list if i["type"] == "extra_forbidden"]
-#     out_dict = {
-#         "missing_field_count": len(missing_fields),
-#         "missing_fields": [i["loc"] for i in missing_fields],
-#         "extra_field_count": len(extra_fields),
-#         "extra_fields": [i["loc"] for i in extra_fields],
-#     }
-#     return out_dict
-
-
-# def count_converted_errors(error_list: list) -> dict:
-#     invalid_fields = [
-#         i
-#         for i in error_list
-#         if i["type"] in ["literal_error", "string_pattern_mismatch"]
-#     ]
-#     missing_fields = [i for i in error_list if i["type"] == "missing"]
-#     extra_fields = [i for i in error_list if i["type"] == "extra_forbidden"]
-#     other_errors = [
-#         i
-#         for i in error_list
-#         if i["type"]
-#         not in [
-#             "missing",
-#             "extra_forbidden",
-#             "literal_error",
-#             "string_pattern_mismatch",
-#         ]
-#     ]
-#     out_dict = {
-#         "invalid_field_count": len(invalid_fields),
-#         "invalid_fields": [i["loc"] for i in invalid_fields],
-#         "missing_field_count": len(missing_fields),
-#         "missing_fields": [i["loc"] for i in missing_fields],
-#         "extra_field_count": len(extra_fields),
-#         "extra_fields": [i["loc"] for i in extra_fields],
-#         "other_errors": [i["loc"] for i in other_errors],
-#     }
-#     return out_dict
+        out_dict["error_count"] = (
+            out_dict["missing_field_count"]
+            + out_dict["extra_field_count"]
+            + out_dict["invalid_field_count"]
+        )
+        if out_dict["invalid_field_count"] == 0:
+            out_dict["invalid_fields"] = None
+        if out_dict["missing_field_count"] == 0:
+            out_dict["missing_fields"] = None
+        if out_dict["extra_field_count"] == 0:
+            out_dict["extra_fields"] = None
+        if out_dict["order_item_mismatches"] == {"input": [], "location": []}:
+            out_dict["order_item_mismatches"] = None
+        else:
+            out_dict["error_count"] += 1
+        return out_dict

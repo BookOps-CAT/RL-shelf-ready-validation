@@ -1,8 +1,7 @@
 from pymarc import Record, Field, Subfield, Leader
-from shelf_ready_validator.vendor_marc import VendorRecord
-from shelf_ready_validator.field_models import (
+from shelf_ready_validator.vendor_marc import (
+    VendorRecord,
     Item,
-    OrderItemData,
     Order,
     Invoice,
     Library,
@@ -22,10 +21,8 @@ def test_VendorRecord(stub_record):
     assert isinstance(record.lc_class, LCClass)
     assert isinstance(record.library_field, Library)
     assert isinstance(record.order_field, Order)
-    assert isinstance(record.order_item_data[0], OrderItemData)
-    assert isinstance(record.order_item_data, list)
     assert isinstance(record.material_type, str)
-    assert record.material_type.material_type == "monograph_record"
+    assert record.material_type == "monograph_record"
 
 
 def test_VendorRecord_field_from_marc(stub_record):
@@ -52,8 +49,6 @@ def test_VendorRecord_dupe_vals(stub_record_with_dupes):
     assert isinstance(record.library_field[0], Library)
     assert isinstance(record.order_field, list)
     assert isinstance(record.order_field[0], Order)
-    assert isinstance(record.order_item_data, list)
-    assert isinstance(record.order_item_data[0], OrderItemData)
 
 
 def test_VendorRecord_pydantic_input(stub_record):
@@ -106,13 +101,6 @@ def test_VendorRecord_pydantic_input(stub_record):
         "order_location": "MAF",
         "order_fund": "123456apprv",
     }
-    assert record_input["order_item_data"] == [
-        {
-            "order_loc": "MAF",
-            "item_loc": "rcmf2",
-            "item_type": "55",
-        }
-    ]
     assert record_input["material_type"] == "monograph"
 
 
@@ -129,7 +117,6 @@ def test_VendorRecord_pydantic_input_dupe_fields(stub_record_with_dupes):
     assert isinstance(record_input["lc_class"], list)
     assert isinstance(record_input["library_field"], list)
     assert isinstance(record_input["order_field"], list)
-    assert isinstance(record_input["order_item_data"], list)
     assert isinstance(record_input["material_type"], str)
 
 

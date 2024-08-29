@@ -25,7 +25,6 @@ def get_vendor_files(vendor: str) -> List[File]:
         for file in file_list:
             downloaded_file = client.get_file(file=file, remote_dir=vendor_dir)
             all_files.append(downloaded_file)
-    print(f"{len(all_files)} files on {vendor} server")
     return all_files
 
 
