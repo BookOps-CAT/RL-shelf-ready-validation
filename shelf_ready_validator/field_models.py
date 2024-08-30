@@ -1,5 +1,6 @@
 from typing import Annotated, Literal, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
+from pydantic_core import PydanticCustomError
 
 
 class BibCallNoModel(BaseModel):
@@ -20,9 +21,19 @@ class BibVendorCodeModel(BaseModel):
 
 class LCClassModel(BaseModel):
 
-    ind1: Literal[" ", "0", "1"]
+    ind1: Literal[" ", "", "0", "1"]
     ind2: Literal["0", "4"]
     lcc: str
+
+    @model_validator(mode="after")
+    def validate_indicator_pair(self) -> "LCClassModel":
+        valid_combos = [(" ", "4"), ("", "4"), ("0", "0"), ("1", "0")]
+        if (self.ind1, self.ind2) not in valid_combos:
+            raise PydanticCustomError(
+                "literal_error", f"Invalid indicators: [{self.ind1}, {self.ind2}]"
+            )
+        else:
+            return self
 
 
 class LibraryFieldModel(BaseModel):

@@ -8,13 +8,12 @@ also have a method called `filter_none_vals` which returns a dictionary of the d
 attributes with None values removed.
 """
 
-from abc import ABC, abstractmethod
 from dataclasses import dataclass, asdict
 from typing import List, Dict, Optional, Union
 from pymarc import Field
 
 
-def get_subfield_from_field(field: Field, code: str) -> Union[str, List[str], None]:
+def get_subfield_from_field(field: Field, code: str) -> Optional[Union[str, List[str]]]:
     """A helper function to extract a subfield as a str from a pymarc Field object."""
     subfield_dict = field.subfields_as_dict()
     subfield_list = subfield_dict.get(code, None)
@@ -24,26 +23,13 @@ def get_subfield_from_field(field: Field, code: str) -> Union[str, List[str], No
         return subfield_list
 
 
-class VendorField(ABC):
-    """An abstract base class for vendor-provided MARC fields."""
-
-    @classmethod
-    @abstractmethod
-    def from_marc_field(cls, field: Field) -> "VendorField":
-        pass
-
-    @abstractmethod
-    def filter_none_vals(self) -> Dict:
-        pass
-
-
 @dataclass
-class BibCallNo(VendorField):
+class BibCallNo:
     """A dataclass to model the 852 field in a vendor-provided MARC record."""
 
     ind1: Optional[str]
     ind2: Optional[str]
-    call_no: Union[str, List[str], None]
+    call_no: Optional[Union[str, List[str]]]
 
     @classmethod
     def from_marc_field(cls, field: Field) -> "BibCallNo":
@@ -58,12 +44,12 @@ class BibCallNo(VendorField):
 
 
 @dataclass
-class BibVendorCode(VendorField):
+class BibVendorCode:
     """A dataclass to model the 901 field in a vendor-provided MARC record."""
 
     ind1: Optional[str]
     ind2: Optional[str]
-    vendor_code: Union[str, List[str], None]
+    vendor_code: Optional[Union[str, List[str]]]
 
     @classmethod
     def from_marc_field(cls, field: Field) -> "BibVendorCode":
@@ -78,12 +64,12 @@ class BibVendorCode(VendorField):
 
 
 @dataclass
-class LCClass(VendorField):
+class LCClass:
     """A dataclass to model the 050 field in a vendor-provided MARC record."""
 
     ind1: Optional[str]
     ind2: Optional[str]
-    lcc: Union[str, List[str], None]
+    lcc: Optional[Union[str, List[str]]]
 
     @classmethod
     def from_marc_field(cls, field: Field) -> "LCClass":
@@ -98,12 +84,12 @@ class LCClass(VendorField):
 
 
 @dataclass
-class Library(VendorField):
+class Library:
     """A dataclass to model the 910 field in a vendor-provided MARC record."""
 
     ind1: Optional[str]
     ind2: Optional[str]
-    library: Union[str, List[str], None]
+    library: Optional[Union[str, List[str]]]
 
     @classmethod
     def from_marc_field(cls, field: Field) -> "Library":
@@ -118,14 +104,14 @@ class Library(VendorField):
 
 
 @dataclass
-class Order(VendorField):
+class Order:
     """A dataclass to model the 960 field in a vendor-provided MARC record."""
 
     ind1: Optional[str]
     ind2: Optional[str]
-    order_price: Union[str, List[str], None]
-    order_location: Union[str, List[str], None]
-    order_fund: Union[str, List[str], None]
+    order_price: Optional[Union[str, List[str]]]
+    order_location: Optional[Union[str, List[str]]]
+    order_fund: Optional[Union[str, List[str]]]
 
     @classmethod
     def from_marc_field(cls, field: Field) -> "Order":
@@ -142,18 +128,18 @@ class Order(VendorField):
 
 
 @dataclass
-class Invoice(VendorField):
+class Invoice:
     """A dataclass to model the 980 field in a vendor-provided MARC record."""
 
     ind1: Optional[str]
     ind2: Optional[str]
-    invoice_date: Union[str, List[str], None]
-    invoice_price: Union[str, List[str], None]
-    invoice_shipping: Union[str, List[str], None]
-    invoice_tax: Union[str, List[str], None]
-    invoice_net_price: Union[str, List[str], None]
-    invoice_number: Union[str, List[str], None]
-    invoice_copies: Union[str, List[str], None]
+    invoice_date: Optional[Union[str, List[str]]]
+    invoice_price: Optional[Union[str, List[str]]]
+    invoice_shipping: Optional[Union[str, List[str]]]
+    invoice_tax: Optional[Union[str, List[str]]]
+    invoice_net_price: Optional[Union[str, List[str]]]
+    invoice_number: Optional[Union[str, List[str]]]
+    invoice_copies: Optional[Union[str, List[str]]]
 
     @classmethod
     def from_marc_field(cls, field: Field) -> "Invoice":
@@ -174,22 +160,22 @@ class Invoice(VendorField):
 
 
 @dataclass
-class Item(VendorField):
+class Item:
     """A dataclass to model the 949 field in a vendor-provided MARC record."""
 
     ind1: Optional[str]
     ind2: Optional[str]
-    item_call_tag: Union[str, List[str], None]
-    item_call_no: Union[str, List[str], None]
-    item_barcode: Union[str, List[str], None]
-    item_price: Union[str, List[str], None]
-    item_message: Union[str, List[str], None]
-    message: Union[str, List[str], None]
-    item_vendor_code: Union[str, List[str], None]
-    item_agency: Union[str, List[str], None]
-    item_location: Union[str, List[str], None]
-    item_volume: Union[str, List[str], None]
-    item_type: Union[str, List[str], None]
+    item_call_tag: Optional[Union[str, List[str]]]
+    item_call_no: Optional[Union[str, List[str]]]
+    item_barcode: Optional[Union[str, List[str]]]
+    item_price: Optional[Union[str, List[str]]]
+    item_message: Optional[Union[str, List[str]]]
+    message: Optional[Union[str, List[str]]]
+    item_vendor_code: Optional[Union[str, List[str]]]
+    item_agency: Optional[Union[str, List[str]]]
+    item_location: Optional[Union[str, List[str]]]
+    item_volume: Optional[Union[str, List[str]]]
+    item_type: Optional[Union[str, List[str]]]
 
     @classmethod
     def from_marc_field(cls, field: Field) -> "Item":

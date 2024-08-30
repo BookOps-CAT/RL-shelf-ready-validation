@@ -127,6 +127,7 @@ dmypy.json
 # localfiles/
 temp/
 *.mrk
+shelf_ready_validator/utils
 
 # OSX
 .DS_Store

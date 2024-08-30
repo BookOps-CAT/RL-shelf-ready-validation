@@ -1,4 +1,5 @@
 from pymarc import Record, Field, Subfield, Leader
+import pytest
 from shelf_ready_validator.vendor_marc import (
     VendorRecord,
     Item,
@@ -13,16 +14,16 @@ from shelf_ready_validator.vendor_marc import (
 
 def test_VendorRecord(stub_record):
     record = VendorRecord(leader=stub_record.leader, fields=stub_record.fields)
-    assert isinstance(record.bib_call_no, BibCallNo)
-    assert isinstance(record.bib_vendor_code, BibVendorCode)
-    assert isinstance(record.invoice_field, Invoice)
-    assert isinstance(record.item_fields[0], Item)
-    assert isinstance(record.item_fields, list)
-    assert isinstance(record.lc_class, LCClass)
-    assert isinstance(record.library_field, Library)
-    assert isinstance(record.order_field, Order)
+    assert isinstance(record._VendorRecord__bib_call_no, BibCallNo)
+    assert isinstance(record._VendorRecord__bib_vendor_code, BibVendorCode)
+    assert isinstance(record._VendorRecord__invoice_field, Invoice)
+    assert isinstance(record._VendorRecord__item_fields[0], Item)
+    assert isinstance(record._VendorRecord__item_fields, list)
+    assert isinstance(record._VendorRecord__lc_class, LCClass)
+    assert isinstance(record._VendorRecord__library_field, Library)
+    assert isinstance(record._VendorRecord__order_field, Order)
     assert isinstance(record.material_type, str)
-    assert record.material_type == "monograph_record"
+    assert record.material_type == "monograph"
 
 
 def test_VendorRecord_field_from_marc(stub_record):
@@ -35,20 +36,20 @@ def test_VendorRecord_dupe_vals(stub_record_with_dupes):
     record = VendorRecord(
         leader=stub_record_with_dupes.leader, fields=stub_record_with_dupes.fields
     )
-    assert isinstance(record.bib_call_no, list)
-    assert isinstance(record.bib_call_no[0], BibCallNo)
-    assert isinstance(record.bib_vendor_code, list)
-    assert isinstance(record.bib_vendor_code[0], BibVendorCode)
-    assert isinstance(record.invoice_field, list)
-    assert isinstance(record.invoice_field[0], Invoice)
-    assert isinstance(record.item_fields, list)
-    assert isinstance(record.item_fields[0], Item)
-    assert isinstance(record.lc_class, list)
-    assert isinstance(record.lc_class[0], LCClass)
-    assert isinstance(record.library_field, list)
-    assert isinstance(record.library_field[0], Library)
-    assert isinstance(record.order_field, list)
-    assert isinstance(record.order_field[0], Order)
+    assert isinstance(record._VendorRecord__bib_call_no, list)
+    assert isinstance(record._VendorRecord__bib_call_no[0], BibCallNo)
+    assert isinstance(record._VendorRecord__bib_vendor_code, list)
+    assert isinstance(record._VendorRecord__bib_vendor_code[0], BibVendorCode)
+    assert isinstance(record._VendorRecord__invoice_field, list)
+    assert isinstance(record._VendorRecord__invoice_field[0], Invoice)
+    assert isinstance(record._VendorRecord__item_fields, list)
+    assert isinstance(record._VendorRecord__item_fields[0], Item)
+    assert isinstance(record._VendorRecord__lc_class, list)
+    assert isinstance(record._VendorRecord__lc_class[0], LCClass)
+    assert isinstance(record._VendorRecord__library_field, list)
+    assert isinstance(record._VendorRecord__library_field[0], Library)
+    assert isinstance(record._VendorRecord__order_field, list)
+    assert isinstance(record._VendorRecord__order_field[0], Order)
 
 
 def test_VendorRecord_pydantic_input(stub_record):
@@ -158,6 +159,55 @@ def test_MaterialType_multivol():
     assert record.material_type == "multipart"
 
 
+def test_MaterialType_dance():
+    dance_record = Record()
+    dance_record.leader = Leader("00820foo a22001935i 4500")
+    dance_record.add_field(
+        Field(
+            tag="960",
+            indicators=[" ", " "],
+            subfields=[
+                Subfield(code="s", value="100"),
+                Subfield(code="t", value="PAD"),
+                Subfield(code="u", value="123456apprv"),
+            ],
+        )
+    )
+    record = VendorRecord(leader=dance_record.leader, fields=dance_record.fields)
+    assert record.material_type == "dance"
+    assert isinstance(record._VendorRecord__order_field, Order)
+
+
+def test_MaterialType_dance_multiple_orders():
+    dance_record = Record()
+    dance_record.leader = Leader("00820foo a22001935i 4500")
+    dance_record.add_field(
+        Field(
+            tag="960",
+            indicators=[" ", " "],
+            subfields=[
+                Subfield(code="s", value="100"),
+                Subfield(code="t", value="PAD"),
+                Subfield(code="u", value="123456apprv"),
+            ],
+        )
+    )
+    dance_record.add_field(
+        Field(
+            tag="960",
+            indicators=[" ", " "],
+            subfields=[
+                Subfield(code="s", value="200"),
+                Subfield(code="t", value="PAD"),
+                Subfield(code="u", value="123456apprv"),
+            ],
+        )
+    )
+    record = VendorRecord(leader=dance_record.leader, fields=dance_record.fields)
+    assert record.material_type == "dance"
+    assert isinstance(record._VendorRecord__order_field, list)
+
+
 def test_MaterialType_catalogue():
     catalogue_record = Record()
     catalogue_record.leader = Leader("00820cam a22001935i 4500")
@@ -188,3 +238,49 @@ def test_MaterialType_unknown():
     unknown_record.leader = "00820foo a22001935i 4500"
     record = VendorRecord(leader=unknown_record.leader, fields=unknown_record.fields)
     assert record.material_type == "unknown"
+
+
+def test_VendorRecord_get_control_number_001():
+    record = Record()
+    record.leader = "00820foo a22001935i 4500"
+    record.add_field(Field(tag="001", data="on1235567890"))
+    record = VendorRecord(leader=record.leader, fields=record.fields)
+    control_num = record.get_control_number()
+    assert control_num == "on1235567890"
+
+
+@pytest.mark.parametrize(
+    "tag, code, value",
+    [
+        ("035", "a", "(OCoLC)1234567890"),
+        ("020", "a", "9781234567890"),
+        ("022", "a", "1111-2222"),
+        ("024", "a", "123456"),
+        ("010", "a", "2024123456"),
+        ("852", "h", "ReCAP 24-000000"),
+    ],
+)
+def test_VendorRecord_get_control_number_other_fields(tag, code, value):
+    record = Record()
+    record.leader = "00820foo a22001935i 4500"
+    record.add_field(
+        Field(
+            tag=tag,
+            indicators=[" ", " "],
+            subfields=[
+                Subfield(code=code, value=value),
+            ],
+        )
+    )
+    record = VendorRecord(leader=record.leader, fields=record.fields)
+    control_num = record.get_control_number()
+    assert control_num == value
+
+
+def test_VendorRecord_get_control_number_None():
+    record = Record()
+    record.leader = "00820foo a22001935i 4500"
+    record.add_field(Field(tag="008", data="190306s2017    ht a   j      000 1 hat d"))
+    record = VendorRecord(leader=record.leader, fields=record.fields)
+    control_num = record.get_control_number()
+    assert control_num is None

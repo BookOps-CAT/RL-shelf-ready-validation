@@ -67,19 +67,12 @@ class MonographRecord(BaseModel):
         ]
         item_fields = self.item_fields
         order_field = self.order_field
-        if item_fields is None or order_field is None:
-            return self
-        else:
-            order_location = order_field.order_location
-            for item in item_fields:
-                combo = (order_location, item.item_location, item.item_type)
-                if combo not in valid_combos:
-                    raise PydanticCustomError(
-                        "order_item_mismatch",
-                        f"Invalid combination of item type, order "
-                        f"location and item location: {combo}",
-                    )
-            return self
+        order_location = order_field.order_location
+        for item in item_fields:
+            combo = (order_location, item.item_location, item.item_type)
+            if combo not in valid_combos:
+                raise PydanticCustomError("order_item_mismatch", f"{combo}")
+        return self
 
     @field_validator(
         "bib_call_no",
@@ -105,19 +98,15 @@ class MonographRecord(BaseModel):
             List[ItemFieldModel],
         ],
     ) -> Any:
-        if isinstance(v, list):
-            if all(not item for item in v):
-                raise PydanticCustomError("missing", "Field required")
-        else:
-            if not v:
-                raise PydanticCustomError("missing", "Field required")
+        if not v:
+            raise PydanticCustomError("missing_before_validation", "Field required")
         return v
 
 
 class OtherRecord(BaseModel):
     """
     A class to define a valid MARC record without an 852 or 949 field. This model
-    should be used to validate records for catalogues taissonnes, pamphlets,
+    should be used to validate records for catalogues raissonnes, pamphlets,
     multi-volume works, works with non-standard binding/packaging, and dance
     materials. Extra fields will be flagged as errors.
 

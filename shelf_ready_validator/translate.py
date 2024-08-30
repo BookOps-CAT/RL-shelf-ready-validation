@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Tuple, Union
+from typing import Optional, Tuple, Union
 from pydantic_core import ErrorDetails
 
 
@@ -48,58 +48,59 @@ class MarcError:
 
     def __init__(self, error: ErrorDetails):
         self.original_error = error
+        self.input = self._get_input()
+        self.msg = self._get_msg()
+        self.loc = self._get_loc()
         self.type = error.get("type", None)
-        self.msg = error.get("msg", None)
         self.ctx = error.get("ctx", None)
         self.url = error.get("url", None)
-        self.input = self._convert_input()
-        self.loc = self._error_loc_to_marc()
+        self.loc_marc = self._loc2marc()
 
-    def _error_loc_to_marc(self) -> Union[str, Tuple[str, str, str]]:
-        if self.type == "order_item_mismatch":
-            order = "".join(
-                [
-                    MarcEncoding["order_field"].value,
-                    MarcEncoding["order_location"].value,
-                ]
-            )
-            item_location = "".join(
-                [MarcEncoding["item_fields"].value, MarcEncoding["item_type"].value]
-            )
-            item_type = "".join(
-                [MarcEncoding["item_fields"].value, MarcEncoding["item_location"].value]
-            )
-            return (order, item_location, item_type)
-        elif self.original_error["loc"][0] == "material_type":
-            return "material_type"
-        elif self.original_error["loc"][0] == "item_fields" and self.original_error[
-            "input"
-        ] == [{}]:
-            return MarcEncoding[str(self.original_error["loc"][0])].value
-        elif (
-            self.type == "extra_forbidden"
-            and self.original_error["loc"][0] == "item_fields"
-        ):
-            return MarcEncoding[str(self.original_error["loc"][0])].value
-        elif self.original_error["loc"][0] == "item_fields":
-            tag = MarcEncoding[str(self.original_error["loc"][0])].value
-            subfield_code = MarcEncoding[str(self.original_error["loc"][2])].value
-            item_num = f"_{int(self.original_error["loc"][1]) + 1}"
-            return "".join([tag, subfield_code, item_num])
-        elif all(isinstance(i, str) for i in self.original_error["loc"]):
-            loc_parts = [MarcEncoding[str(i)].value for i in self.original_error["loc"]]
-            return "".join(loc_parts)
+    def _get_msg(self) -> Optional[str]:
+        msg = self.original_error.get("msg", None)
+        if msg is None:
+            return None
+        elif self.original_error["type"] == "order_item_mismatch":
+            return f"Invalid combination of item type, order location and item location: {eval(msg)}"  # noqa: 501
         else:
-            return MarcEncoding[str(self.original_error["loc"][0])].value
+            return msg
 
-    def _convert_input(self):
+    def _get_input(self):
         input = self.original_error.get("input", None)
         if input is None:
             return None
         elif self.original_error["type"] == "order_item_mismatch":
-            return self.original_error["input"]["order_item_data"][0]
+            return eval(self.original_error["msg"])
         else:
             return input
+
+    def _get_loc(self):
+        loc = self.original_error.get("loc", None)
+        if loc is None:
+            return None
+        elif self.original_error["type"] == "order_item_mismatch":
+            return (
+                "order_field",
+                "item_location",
+                "item_type",
+            )
+
+        else:
+            return loc
+
+    def _loc2marc(self) -> Union[str, Tuple[str, str, str]]:
+        out_loc = []
+        if self.type == "order_item_mismatch":
+            return ("960$t", "949_$l", "949_$t")
+
+        for i in self.loc:
+            if i in MarcEncoding.__members__:
+                out_loc.append(MarcEncoding[str(i)].value)
+            elif isinstance(i, int):
+                out_loc.append(f"_{i + 1}_")
+            else:
+                out_loc.append(i)
+        return "".join(out_loc)
 
 
 class MarcValidationError:
@@ -114,7 +115,9 @@ class MarcValidationError:
         self.order_item_mismatches = self._get_order_item_mismatch_errors()
 
     def _get_missing_fields(self) -> list:
-        return [i for i in self.errors if i.type == "missing"]
+        return [
+            i for i in self.errors if i.type in ["missing", "missing_before_validation"]
+        ]
 
     def _get_extra_fields(self) -> list:
         return [i for i in self.errors if i.type == "extra_forbidden"]
@@ -130,27 +133,24 @@ class MarcValidationError:
         for error in invalid_fields:
             invalid_field_list.append(
                 {
-                    "invalid_field": error.loc,
+                    "invalid_field": error.loc_marc,
                     "input": error.input,
                     "expectation": error.ctx,
                 }
             )
         return invalid_field_list
 
-    def _get_order_item_mismatch_errors(self) -> dict:
-        return {
-            "input": [i.input for i in self.errors if i.type == "order_item_mismatch"],
-            "location": [i.loc for i in self.errors if i.type == "order_item_mismatch"],
-        }
+    def _get_order_item_mismatch_errors(self) -> list:
+        return [i.input for i in self.errors if i.type == "order_item_mismatch"]
 
     def to_dict(self):
         out_dict = {
             "valid": False,
             "error_count": 0,
             "missing_field_count": len(self.missing_fields),
-            "missing_fields": [i.loc for i in self.missing_fields],
+            "missing_fields": [i.loc_marc for i in self.missing_fields],
             "extra_field_count": len(self.extra_fields),
-            "extra_fields": [i.loc for i in self.extra_fields],
+            "extra_fields": [i.loc_marc for i in self.extra_fields],
             "invalid_field_count": len(self.invalid_fields),
             "invalid_fields": self.invalid_fields,
             "order_item_mismatches": self.order_item_mismatches,
@@ -160,14 +160,5 @@ class MarcValidationError:
             + out_dict["extra_field_count"]
             + out_dict["invalid_field_count"]
         )
-        if out_dict["invalid_field_count"] == 0:
-            out_dict["invalid_fields"] = None
-        if out_dict["missing_field_count"] == 0:
-            out_dict["missing_fields"] = None
-        if out_dict["extra_field_count"] == 0:
-            out_dict["extra_fields"] = None
-        if out_dict["order_item_mismatches"] == {"input": [], "location": []}:
-            out_dict["order_item_mismatches"] = None
-        else:
-            out_dict["error_count"] += 1
+        out_dict["error_count"] += len(self.order_item_mismatches)
         return out_dict

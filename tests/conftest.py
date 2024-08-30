@@ -1,7 +1,7 @@
 import pytest
 from pymarc import Record
 from pymarc import Field, Subfield
-from shelf_ready_validator.models import (
+from shelf_ready_validator.marc_models import (
     BibCallNoModel,
     BibVendorCodeModel,
     LCClassModel,
@@ -9,7 +9,6 @@ from shelf_ready_validator.models import (
     OrderFieldModel,
     InvoiceFieldModel,
     ItemFieldModel,
-    OrderItem,
 )
 
 
@@ -75,74 +74,6 @@ def mock_item_fields():
             item_type="55",
         )
     ]
-
-
-@pytest.fixture
-def mock_valid_order_item():
-    return [
-        OrderItem(order_location="MAL", item_location="rc2ma", item_type="55"),
-    ]
-
-
-@pytest.fixture
-def valid_pamphlet_record():
-    valid_pamphlet_record = {
-        "material_type": "pamphlet",
-        "bib_vendor_code": "EVP",
-        "lcc": "Z123",
-        "invoice_date": "240101",
-        "invoice_price": "100",
-        "invoice_shipping": "100",
-        "invoice_tax": "000",
-        "invoice_net_price": "200",
-        "invoice_number": "1234567890",
-        "invoice_copies": "1",
-        "order_price": "200",
-        "order_location": "MAB",
-        "order_fund": "123456apprv",
-        "order_ind1": " ",
-        "order_ind2": " ",
-        "library": "RL",
-    }
-    return valid_pamphlet_record
-
-
-@pytest.fixture
-def string_barcode_error():
-    string_barcode_error = {
-        "type": "string_pattern_mismatch",
-        "loc": ("items", 0, "RL", "item_barcode"),
-        "msg": "String should match pattern '^33433[0-9]{9}$|^33333[0-9]{9}$|^34444[0-9]{9}$'",
-        "input": "12345678901234",
-        "ctx": {"pattern": "^33433[0-9]{9}$|^33333[0-9]{9}$|^34444[0-9]{9}$"},
-        "url": "https://errors.pydantic.dev/2.5/v/string_pattern_mismatch",
-    }
-    return string_barcode_error
-
-
-@pytest.fixture
-def vendor_code_error():
-    vendor_code_error = {
-        "type": "literal_error",
-        "loc": ("items", 0, "RL", "item_barcode"),
-        "msg": "Input should be 'EVP' or 'AUXAM'",
-        "input": "EVIS",
-        "ctx": {"expected": "'EVP' or 'AUXAM'"},
-        "url": "https://errors.pydantic.dev/2.5/v/literal_error",
-    }
-    return vendor_code_error
-
-
-@pytest.fixture
-def extra_field_error():
-    extra_field_error = {
-        "type": "extra_forbidden",
-        "loc": ("item", "pamphlet", "item_vendor_code"),
-        "msg": "Extra inputs are not permitted",
-        "input": "EVP",
-        "url": "https://errors.pydantic.dev/2.5/v/extra_forbidden",
-    }
-    return extra_field_error
 
 
 @pytest.fixture(scope="function")
@@ -286,3 +217,78 @@ def stub_record_with_dupes(stub_record):
         Field(tag="980", indicators=[" ", " "], subfields=[Subfield("a", "foo")])
     )
     return dupe_record
+
+
+@pytest.fixture
+def mock_monograph_record():
+    return {
+        "leader": "00000cam a2200000 a 4500",
+        "fields": [{"245": {"a": "The Title"}}],
+        "bib_call_no": {"ind1": "8", "ind2": " ", "call_no": "ReCAP 24-119100"},
+        "bib_vendor_code": {"ind1": " ", "ind2": " ", "vendor_code": "EVP"},
+        "lc_class": {"ind1": " ", "ind2": "4", "lcc": "foo"},
+        "library_field": {"ind1": " ", "ind2": " ", "library": "RL"},
+        "material_type": "monograph",
+        "order_field": {
+            "ind1": " ",
+            "ind2": " ",
+            "order_price": "100",
+            "order_location": "MAL",
+            "order_fund": "123456",
+        },
+        "invoice_field": {
+            "ind1": " ",
+            "ind2": " ",
+            "invoice_date": "240101",
+            "invoice_price": "100",
+            "invoice_shipping": "0",
+            "invoice_tax": "0",
+            "invoice_net_price": "100",
+            "invoice_number": "123456",
+            "invoice_copies": "1",
+        },
+        "item_fields": [
+            {
+                "ind1": " ",
+                "ind2": "1",
+                "item_call_tag": "8528",
+                "item_call_no": "ReCAP 23-000000",
+                "item_barcode": "33433123456789",
+                "item_price": "1.00",
+                "item_vendor_code": "EVP",
+                "item_agency": "43",
+                "item_location": "rc2ma",
+                "item_type": "55",
+            }
+        ],
+    }
+
+
+@pytest.fixture
+def mock_pamphlet_record():
+    return {
+        "leader": "00000cam a2200000 a 4500",
+        "fields": [{"245": {"a": "The Title"}}],
+        "bib_vendor_code": {"ind1": " ", "ind2": " ", "vendor_code": "EVP"},
+        "lc_class": {"ind1": " ", "ind2": "4", "lcc": "foo"},
+        "library_field": {"ind1": " ", "ind2": " ", "library": "RL"},
+        "material_type": "pamphlet",
+        "order_field": {
+            "ind1": " ",
+            "ind2": " ",
+            "order_price": "100",
+            "order_location": "MAL",
+            "order_fund": "123456",
+        },
+        "invoice_field": {
+            "ind1": " ",
+            "ind2": " ",
+            "invoice_date": "240101",
+            "invoice_price": "100",
+            "invoice_shipping": "0",
+            "invoice_tax": "0",
+            "invoice_net_price": "100",
+            "invoice_number": "123456",
+            "invoice_copies": "1",
+        },
+    }

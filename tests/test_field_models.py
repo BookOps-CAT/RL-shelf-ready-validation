@@ -1,319 +1,694 @@
-from pymarc import Field, Subfield
-from shelf_ready_validator.vendor_marc import (
-    get_subfield_from_field,
-    BibCallNo,
-    BibVendorCode,
-    LCClass,
-    Library,
-    Order,
-    Invoice,
-    Item,
+import pytest
+from pydantic import ValidationError
+from contextlib import nullcontext as does_not_raise
+from shelf_ready_validator.marc_models import (
+    BibCallNoModel,
+    BibVendorCodeModel,
+    LCClassModel,
+    LibraryFieldModel,
+    OrderFieldModel,
+    InvoiceFieldModel,
+    ItemFieldModel,
 )
 
 
-def test_get_subfield_from_field():
-    field_245 = Field(
-        tag="245",
-        indicators=["0", "0"],
-        subfields=[
-            Subfield(code="a", value="Title :"),
-            Subfield(
-                code="b",
-                value="subtitle /",
-            ),
-            Subfield(
-                code="c",
-                value="Author",
-            ),
-        ],
-    )
-    field_020 = Field(
-        tag="020",
-        indicators=[" ", " "],
-        subfields=[
-            Subfield(code="a", value="9781234567890"),
-            Subfield(
-                code="z",
-                value="9781111111111",
-            ),
-            Subfield(
-                code="z",
-                value="9782222222222",
-            ),
-        ],
-    )
-    assert get_subfield_from_field(field_245, "a") == "Title :"
-    assert get_subfield_from_field(field_245, "b") == "subtitle /"
-    assert get_subfield_from_field(field_245, "c") == "Author"
-    assert get_subfield_from_field(field_020, "z") == ["9781111111111", "9782222222222"]
+@pytest.mark.parametrize(
+    "ind1_value, ind2_value, field_value",
+    [
+        (
+            "8",
+            " ",
+            "ReCAP 23-000000",
+        ),
+        (
+            "8",
+            "",
+            "ReCAP 24-000000",
+        ),
+        (
+            "8",
+            "",
+            "ReCAP 25-000000",
+        ),
+    ],
+)
+def test_BibCallNoModel_valid(ind1_value, ind2_value, field_value):
+    with does_not_raise():
+        BibCallNoModel(ind1=ind1_value, ind2=ind2_value, call_no=field_value)
 
 
-def test_BibCallNo():
-    bib_1 = BibCallNo(ind1="8", ind2=" ", call_no="ReCAP 23-000000")
-    bib_2 = BibCallNo(ind1="8", ind2=" ", call_no=None)
-    pymarc_field = Field(
-        tag="852",
-        indicators=["8", " "],
-        subfields=[Subfield(code="h", value="ReCAP 24-111111")],
-    )
-    assert bib_1.filter_none_vals() == {
-        "ind1": "8",
-        "ind2": " ",
-        "call_no": "ReCAP 23-000000",
-    }
-    assert bib_2.filter_none_vals() == {"ind1": "8", "ind2": " "}
-    assert BibCallNo.from_marc_field(pymarc_field) == BibCallNo(
-        ind1="8", ind2=" ", call_no="ReCAP 24-111111"
-    )
+@pytest.mark.parametrize("field_value", ["foo", "bar", "ReCAP 11-111111"])
+def test_BibCallNoModel_invalid_call_no(field_value):
+    with pytest.raises(ValidationError) as e:
+        BibCallNoModel(ind1="8", ind2=" ", call_no=field_value)
+    assert e.value.errors()[0]["type"] == "string_pattern_mismatch"
+    assert len(e.value.errors()) == 1
 
 
-def test_BibVendorCode():
-    vendor_1 = BibVendorCode(ind1=" ", ind2=" ", vendor_code="EVP")
-    vendor_2 = BibVendorCode(ind1=" ", ind2=" ", vendor_code=None)
-    pymarc_field = Field(
-        tag="901",
-        indicators=[" ", " "],
-        subfields=[Subfield(code="a", value="LEILA")],
-    )
-    assert vendor_1.filter_none_vals() == {
-        "ind1": " ",
-        "ind2": " ",
-        "vendor_code": "EVP",
-    }
-    assert vendor_2.filter_none_vals() == {"ind1": " ", "ind2": " "}
-    assert BibVendorCode.from_marc_field(pymarc_field) == BibVendorCode(
-        ind1=" ", ind2=" ", vendor_code="LEILA"
-    )
+@pytest.mark.parametrize(
+    "ind1_value, ind2_value",
+    [
+        (
+            "1",
+            "1",
+        ),
+        (
+            "0",
+            "0",
+        ),
+        (
+            "2",
+            "2",
+        ),
+    ],
+)
+def test_BibCallNoModel_invalid_indicators(ind1_value, ind2_value):
+    with pytest.raises(ValidationError) as e:
+        BibCallNoModel(ind1=ind1_value, ind2=ind2_value, call_no="ReCAP 23-000000")
+    error_types = [i["type"] for i in e.value.errors()]
+    assert error_types.count("literal_error") == 2
+    assert len(e.value.errors()) == 2
 
 
-def test_LCClass():
-    lc_1 = LCClass(ind1=" ", ind2=" ", lcc="foo")
-    lc_2 = LCClass(ind1=" ", ind2=" ", lcc=None)
-    pymarc_field = Field(
-        tag="050",
-        indicators=[" ", "4"],
-        subfields=[
-            Subfield(code="a", value="DK504.73"),
-        ],
-    )
-    assert lc_1.filter_none_vals() == {
-        "ind1": " ",
-        "ind2": " ",
-        "lcc": "foo",
-    }
-    assert lc_2.filter_none_vals() == {"ind1": " ", "ind2": " "}
-    assert LCClass.from_marc_field(pymarc_field) == LCClass(
-        ind1=" ", ind2="4", lcc="DK504.73"
-    )
+@pytest.mark.parametrize(
+    "ind1_value, ind2_value, field_value",
+    [
+        (" ", " ", "EVP"),
+        ("", "", "AUXAM"),
+        (" ", "", "LEILA"),
+        ("", " ", "LEILA"),
+    ],
+)
+def test_BibVendorCodeModel_valid(ind1_value, ind2_value, field_value):
+    with does_not_raise():
+        BibVendorCodeModel(ind1=ind1_value, ind2=ind2_value, vendor_code=field_value)
 
 
-def test_Library():
-    library_1 = Library(ind1=" ", ind2=" ", library="foo")
-    library_2 = Library(ind1=" ", ind2=" ", library=None)
-    pymarc_field = Field(
-        tag="910",
-        indicators=[" ", " "],
-        subfields=[
-            Subfield(code="a", value="RL"),
-        ],
-    )
-    assert library_1.filter_none_vals() == {
-        "ind1": " ",
-        "ind2": " ",
-        "library": "foo",
-    }
-    assert library_2.filter_none_vals() == {"ind1": " ", "ind2": " "}
-    assert Library.from_marc_field(pymarc_field) == Library(
-        ind1=" ", ind2=" ", library="RL"
-    )
+@pytest.mark.parametrize("field_value", ["foo", "bar", "baz"])
+def test_BibVendorCodeModel_invalid_code(field_value):
+    with pytest.raises(ValidationError) as e:
+        BibVendorCodeModel(ind1=" ", ind2=" ", vendor_code=field_value)
+    assert e.value.errors()[0]["type"] == "literal_error"
+    assert len(e.value.errors()) == 1
 
 
-def test_Order():
-    order_1 = Order(
-        ind1=" ", ind2=" ", order_price="100", order_location="MAL", order_fund="123456"
-    )
-    order_2 = Order(
-        ind1=" ", ind2=" ", order_price=None, order_location=None, order_fund=None
-    )
-    pymarc_field = Field(
-        tag="960",
-        indicators=[" ", " "],
-        subfields=[
-            Subfield(code="s", value="200"),
-            Subfield(code="t", value="MAP"),
-            Subfield(code="u", value="123"),
-        ],
-    )
-    assert order_1.filter_none_vals() == {
-        "ind1": " ",
-        "ind2": " ",
-        "order_price": "100",
-        "order_location": "MAL",
-        "order_fund": "123456",
-    }
-    assert order_2.filter_none_vals() == {"ind1": " ", "ind2": " "}
-    assert Order.from_marc_field(pymarc_field) == Order(
-        ind1=" ", ind2=" ", order_price="200", order_location="MAP", order_fund="123"
-    )
+@pytest.mark.parametrize(
+    "ind1_value, ind2_value",
+    [
+        (
+            "1",
+            "1",
+        ),
+        (
+            "8",
+            "0",
+        ),
+        (
+            "1",
+            "0",
+        ),
+    ],
+)
+def test_BibVendorCodeModel_invalid_indicators(ind1_value, ind2_value):
+    with pytest.raises(ValidationError) as e:
+        BibVendorCodeModel(ind1=ind1_value, ind2=ind2_value, vendor_code="EVP")
+    error_types = [i["type"] for i in e.value.errors()]
+    assert error_types.count("literal_error") == 2
+    assert len(e.value.errors()) == 2
 
 
-def test_Invoice():
-    invoice_1 = Invoice(
-        ind1=" ",
-        ind2=" ",
-        invoice_date="240701",
-        invoice_price="500",
-        invoice_shipping="100",
-        invoice_tax="200",
-        invoice_number="12",
-        invoice_net_price="800",
-        invoice_copies="5",
-    )
-    invoice_2 = Invoice(
-        ind1=" ",
-        ind2=" ",
-        invoice_date="240801",
-        invoice_price=None,
-        invoice_shipping=None,
-        invoice_tax="200",
-        invoice_number="11",
-        invoice_net_price="1300",
-        invoice_copies="1",
-    )
-    assert invoice_1.filter_none_vals() == {
-        "ind1": " ",
-        "ind2": " ",
-        "invoice_date": "240701",
-        "invoice_price": "500",
-        "invoice_shipping": "100",
-        "invoice_tax": "200",
-        "invoice_net_price": "800",
-        "invoice_number": "12",
-        "invoice_copies": "5",
-    }
-    assert invoice_2.filter_none_vals() == {
-        "ind1": " ",
-        "ind2": " ",
-        "invoice_date": "240801",
-        "invoice_tax": "200",
-        "invoice_net_price": "1300",
-        "invoice_number": "11",
-        "invoice_copies": "1",
-    }
-    pymarc_field = Field(
-        tag="980",
-        indicators=[" ", " "],
-        subfields=[
-            Subfield(code="a", value="240101"),
-            Subfield(code="b", value="300"),
-            Subfield(code="c", value="100"),
-            Subfield(code="d", value="100"),
-            Subfield(code="e", value="2"),
-            Subfield(code="f", value="500"),
-            Subfield(code="g", value="1"),
-        ],
-    )
-    assert Invoice.from_marc_field(pymarc_field) == Invoice(
-        ind1=" ",
-        ind2=" ",
-        invoice_date="240101",
-        invoice_price="300",
-        invoice_shipping="100",
-        invoice_tax="100",
-        invoice_net_price="2",
-        invoice_number="500",
-        invoice_copies="1",
-    )
+@pytest.mark.parametrize(
+    "ind1_value, ind2_value",
+    [
+        (
+            " ",
+            "4",
+        ),
+        (
+            "0",
+            "0",
+        ),
+        (
+            "1",
+            "0",
+        ),
+    ],
+)
+def test_LCClassModel_valid(ind1_value, ind2_value):
+    with does_not_raise():
+        LCClassModel(ind1=ind1_value, ind2=ind2_value, lcc="F00")
 
 
-def test_Item():
-    item_1 = Item(
-        ind1=" ",
-        ind2="1",
-        item_call_tag="8528",
-        item_call_no="ReCAP 23-000000",
-        item_barcode="33433987654321",
-        item_price="1.00",
-        item_message="foo",
-        message="bar",
-        item_vendor_code="EVP",
-        item_agency="43",
-        item_location="rcmb2",
-        item_volume="1",
-        item_type="2",
-    )
-    item_2 = Item(
-        ind1=" ",
-        ind2="1",
-        item_call_tag="8528",
-        item_call_no="ReCAP 24-000000",
-        item_barcode="33433123456789",
-        item_price="1.00",
-        item_message="foo",
-        message="bar",
-        item_vendor_code="EVP",
-        item_agency="43",
-        item_location="rcmf2",
-        item_volume=None,
-        item_type=None,
-    )
-    pymarc_field = Field(
-        tag="960",
-        indicators=[" ", "1"],
-        subfields=[
-            Subfield(code="z", value="8528"),
-            Subfield(code="a", value="ReCAP 24-999999"),
-            Subfield(code="i", value="33433000000000"),
-            Subfield(code="p", value="2.00"),
-            Subfield(code="v", value="AUXAM"),
-            Subfield(code="h", value="43"),
-            Subfield(code="l", value="rcmf2"),
-            Subfield(code="t", value="55"),
-            Subfield(code="c", value="1"),
-            Subfield(code="u", value="foo"),
-            Subfield(code="m", value="bar"),
-        ],
-    )
-    assert item_1.filter_none_vals() == {
-        "ind1": " ",
-        "ind2": "1",
-        "item_call_tag": "8528",
-        "item_call_no": "ReCAP 23-000000",
-        "item_barcode": "33433987654321",
-        "item_price": "1.00",
-        "item_message": "foo",
-        "message": "bar",
-        "item_vendor_code": "EVP",
-        "item_agency": "43",
-        "item_location": "rcmb2",
-        "item_volume": "1",
-        "item_type": "2",
-    }
-    assert item_2.filter_none_vals() == {
-        "ind1": " ",
-        "ind2": "1",
-        "item_call_tag": "8528",
-        "item_call_no": "ReCAP 24-000000",
-        "item_barcode": "33433123456789",
-        "item_price": "1.00",
-        "item_message": "foo",
-        "message": "bar",
-        "item_vendor_code": "EVP",
-        "item_agency": "43",
-        "item_location": "rcmf2",
-    }
-    assert Item.from_marc_field(pymarc_field) == Item(
-        ind1=" ",
-        ind2="1",
-        item_call_tag="8528",
-        item_call_no="ReCAP 24-999999",
-        item_barcode="33433000000000",
-        item_price="2.00",
-        item_message="foo",
-        message="bar",
-        item_vendor_code="AUXAM",
-        item_agency="43",
-        item_location="rcmf2",
-        item_volume="1",
-        item_type="55",
-    )
+@pytest.mark.parametrize(
+    "ind1_value, ind2_value",
+    [
+        (
+            "5",
+            "6",
+        ),
+        (
+            "7",
+            "8",
+        ),
+        (
+            "9",
+            "1",
+        ),
+    ],
+)
+def test_LCClassModel_invalid_indicators(ind1_value, ind2_value):
+    with pytest.raises(ValidationError) as e:
+        LCClassModel(ind1=ind1_value, ind2=ind2_value, lcc="F00")
+    error_types = [i["type"] for i in e.value.errors()]
+    assert error_types.count("literal_error") == 2
+    assert len(e.value.errors()) == 2
+
+
+@pytest.mark.parametrize(
+    "ind1_value, ind2_value",
+    [
+        (
+            " ",
+            "0",
+        ),
+        (
+            "0",
+            "4",
+        ),
+        (
+            "",
+            "0",
+        ),
+    ],
+)
+def test_LCClassModel_invalid_indicator_combo(ind1_value, ind2_value):
+    with pytest.raises(ValidationError) as e:
+        LCClassModel(ind1=ind1_value, ind2=ind2_value, lcc="F00")
+    assert e.value.errors()[0]["type"] == "literal_error"
+    assert len(e.value.errors()) == 1
+
+
+@pytest.mark.parametrize(
+    "ind1_value, ind2_value, field_value",
+    [
+        (" ", " ", "RL"),
+        ("", "", "BL"),
+        (" ", "", "BPL"),
+        ("", " ", "RL"),
+    ],
+)
+def test_LibraryFieldModel_valid(ind1_value, ind2_value, field_value):
+    with does_not_raise():
+        LibraryFieldModel(ind1=ind1_value, ind2=ind2_value, library=field_value)
+
+
+@pytest.mark.parametrize(
+    "field_value",
+    ["foo", "bar", "baz"],
+)
+def test_LibraryFieldModel_invalid_library_field(field_value):
+    with pytest.raises(ValidationError) as e:
+        LibraryFieldModel(ind1=" ", ind2=" ", library=field_value)
+    assert e.value.errors()[0]["type"] == "literal_error"
+    assert len(e.value.errors()) == 1
+
+
+@pytest.mark.parametrize(
+    "ind1_value, ind2_value",
+    [("1", "1"), ("2", "0"), ("0", "5")],
+)
+def test_LibraryFieldModel_invalid_indicators(ind1_value, ind2_value):
+    with pytest.raises(ValidationError) as e:
+        LibraryFieldModel(ind1=ind1_value, ind2=ind2_value, library="RL")
+    error_types = [i["type"] for i in e.value.errors()]
+    assert error_types.count("literal_error") == 2
+    assert len(e.value.errors()) == 2
+
+
+@pytest.mark.parametrize(
+    "price_field, location_field, fund_field",
+    [
+        ("100", "MAB", "123456"),
+        ("200", "MAF", "789000"),
+        ("300", "MAG", "123"),
+        ("100", "MAL", "111"),
+        ("200", "MAP", "222"),
+        ("300", "MAS", "333"),
+        ("100", "PAD", "111"),
+        ("200", "PAH", "222"),
+        ("300", "PAM", "333"),
+        ("100", "PAT", "111"),
+        ("200", "SC", "222"),
+    ],
+)
+def test_OrderFieldModel_valid(price_field, location_field, fund_field):
+    with does_not_raise():
+        OrderFieldModel(
+            ind1=" ",
+            ind2=" ",
+            order_price=price_field,
+            order_location=location_field,
+            order_fund=fund_field,
+        )
+
+
+@pytest.mark.parametrize(
+    "location_field",
+    ["FOO", "BAR", "BAZ"],
+)
+def test_OrderFieldModel_invalid_location(location_field):
+    with pytest.raises(ValidationError) as e:
+        OrderFieldModel(
+            ind1=" ",
+            ind2=" ",
+            order_price="100",
+            order_location=location_field,
+            order_fund="111",
+        )
+    assert e.value.errors()[0]["type"] == "literal_error"
+    assert len(e.value.errors()) == 1
+
+
+@pytest.mark.parametrize(
+    "price_field, error_type",
+    [("1.00", "string_pattern_mismatch"), (1.00, "string_type"), (1, "string_type")],
+)
+def test_OrderFieldModel_invalid_price(price_field, error_type):
+    with pytest.raises(ValidationError) as e:
+        OrderFieldModel(
+            ind1=" ",
+            ind2=" ",
+            order_price=price_field,
+            order_location="MAL",
+            order_fund="111",
+        )
+    assert e.value.errors()[0]["type"] == error_type
+    assert len(e.value.errors()) == 1
+
+
+@pytest.mark.parametrize(
+    "fund_field",
+    [[], 1.00, 1, {}],
+)
+def test_OrderFieldModel_invalid_fund(fund_field):
+    with pytest.raises(ValidationError) as e:
+        OrderFieldModel(
+            ind1=" ",
+            ind2=" ",
+            order_price="100",
+            order_location="MAL",
+            order_fund=fund_field,
+        )
+    assert e.value.errors()[0]["type"] == "string_type"
+    assert len(e.value.errors()) == 1
+
+
+@pytest.mark.parametrize(
+    "ind1_value, ind2_value",
+    [("1", "1"), ("2", "0"), ("0", "5")],
+)
+def test_OrderFieldModel_invalid_indicators(ind1_value, ind2_value):
+    with pytest.raises(ValidationError) as e:
+        OrderFieldModel(
+            ind1=ind1_value,
+            ind2=ind2_value,
+            order_price="100",
+            order_location="MAL",
+            order_fund="111",
+        )
+    error_types = [i["type"] for i in e.value.errors()]
+    assert error_types.count("literal_error") == 2
+    assert len(e.value.errors()) == 2
+
+
+@pytest.mark.parametrize(
+    "ind1_value, ind2_value",
+    [(" ", " "), ("", ""), (" ", ""), ("", " ")],
+)
+def test_InvoiceFieldModel_valid(ind1_value, ind2_value):
+    with does_not_raise():
+        InvoiceFieldModel(
+            ind1=ind1_value,
+            ind2=ind2_value,
+            invoice_date="240101",
+            invoice_price="100",
+            invoice_shipping="0",
+            invoice_tax="0",
+            invoice_net_price="100",
+            invoice_number="123456",
+            invoice_copies="1",
+        )
+
+
+@pytest.mark.parametrize(
+    "ind1_value, ind2_value",
+    [("1", "1"), ("2", "0"), ("0", "5")],
+)
+def test_InvoiceFieldModel_invalid_indicators(ind1_value, ind2_value):
+    with pytest.raises(ValidationError) as e:
+        InvoiceFieldModel(
+            ind1=ind1_value,
+            ind2=ind2_value,
+            invoice_date="240101",
+            invoice_price="100",
+            invoice_shipping="0",
+            invoice_tax="0",
+            invoice_net_price="100",
+            invoice_number="123456",
+            invoice_copies="1",
+        )
+    error_types = [i["type"] for i in e.value.errors()]
+    assert error_types.count("literal_error") == 2
+    assert len(e.value.errors()) == 2
+
+
+@pytest.mark.parametrize(
+    "field_value",
+    ["2024-01-01", "2024-01-01T00:00:00", "Jan 1, 2024", "01/01/2024", "01-01-2024"],
+)
+def test_InvoiceFieldModel_invalid_invoice_date(field_value):
+    with pytest.raises(ValidationError) as e:
+        InvoiceFieldModel(
+            ind1=" ",
+            ind2=" ",
+            invoice_date=field_value,
+            invoice_price="100",
+            invoice_shipping="0",
+            invoice_tax="0",
+            invoice_net_price="100",
+            invoice_number="123456",
+            invoice_copies="1",
+        )
+    assert e.value.errors()[0]["type"] == "string_pattern_mismatch"
+    assert len(e.value.errors()) == 1
+
+
+@pytest.mark.parametrize(
+    "price_field, error_type",
+    [("1.00", "string_pattern_mismatch"), (1.00, "string_type"), (1, "string_type")],
+)
+def test_InvoiceFieldModel_invalid_prices(price_field, error_type):
+    with pytest.raises(ValidationError) as e:
+        InvoiceFieldModel(
+            ind1=" ",
+            ind2=" ",
+            invoice_date="240101",
+            invoice_price=price_field,
+            invoice_shipping=price_field,
+            invoice_tax=price_field,
+            invoice_net_price=price_field,
+            invoice_number="123456",
+            invoice_copies="1",
+        )
+    error_types = [i["type"] for i in e.value.errors()]
+    assert error_types.count(error_type) == 4
+    assert len(e.value.errors()) == 4
+
+
+@pytest.mark.parametrize(
+    "field_value",
+    [[], 1, {}],
+)
+def test_InvoiceFieldModel_invalid_invoice_number(field_value):
+    with pytest.raises(ValidationError) as e:
+        InvoiceFieldModel(
+            ind1=" ",
+            ind2=" ",
+            invoice_date="240101",
+            invoice_price="100",
+            invoice_shipping="0",
+            invoice_tax="0",
+            invoice_net_price="100",
+            invoice_number=field_value,
+            invoice_copies="1",
+        )
+    assert e.value.errors()[0]["type"] == "string_type"
+    assert len(e.value.errors()) == 1
+
+
+@pytest.mark.parametrize(
+    "copies_field, error_type",
+    [
+        ("a", "string_pattern_mismatch"),
+        (1, "string_type"),
+        ("1a", "string_pattern_mismatch"),
+    ],
+)
+def test_InvoiceFieldModel_invalid_invoice_copies(copies_field, error_type):
+    with pytest.raises(ValidationError) as e:
+        InvoiceFieldModel(
+            ind1=" ",
+            ind2=" ",
+            invoice_date="240101",
+            invoice_price="100",
+            invoice_shipping="0",
+            invoice_tax="0",
+            invoice_net_price="100",
+            invoice_number="123456",
+            invoice_copies=copies_field,
+        )
+    assert e.value.errors()[0]["type"] == error_type
+    assert len(e.value.errors()) == 1
+
+
+def test_ItemFieldModel_valid():
+    with does_not_raise():
+        ItemFieldModel(
+            ind1=" ",
+            ind2="1",
+            item_call_tag="8528",
+            item_call_no="ReCAP 23-000000",
+            item_barcode="33433123456789",
+            item_price="1.00",
+            item_vendor_code="EVP",
+            item_agency="43",
+            item_location="rcmb2",
+            item_type="2",
+        )
+
+
+@pytest.mark.parametrize(
+    "call_no_value",
+    ["ReCAP 23-000000", "ReCAP 24-000000", "ReCAP 25-000000"],
+)
+def test_ItemFieldModel_valid_call_nos(call_no_value):
+    with does_not_raise():
+        ItemFieldModel(
+            ind1=" ",
+            ind2="1",
+            item_call_tag="8528",
+            item_call_no=call_no_value,
+            item_barcode="33433123456789",
+            item_price="1.00",
+            item_vendor_code="EVP",
+            item_agency="43",
+            item_location="rcmb2",
+            item_type="2",
+        )
+
+
+@pytest.mark.parametrize(
+    "vendor_code_value",
+    ["EVP", "AUXAM", "LEILA"],
+)
+def test_ItemFieldModel_valid_vendor_code(vendor_code_value):
+    with does_not_raise():
+        ItemFieldModel(
+            ind1=" ",
+            ind2="1",
+            item_call_tag="8528",
+            item_call_no="ReCAP 23-000000",
+            item_barcode="33433123456789",
+            item_price="1.00",
+            item_vendor_code=vendor_code_value,
+            item_agency="43",
+            item_location="rcmb2",
+            item_type="2",
+        )
+
+
+@pytest.mark.parametrize(
+    "item_location_value",
+    [
+        "rcmb2",
+        "rcmf2",
+        "rcmg2",
+        "rc2ma",
+        "rcmp2",
+        "rcmb2",
+        "rcph2",
+        "rcpm2",
+        "rcpt2",
+        "rc2cf",
+    ],
+)
+def test_ItemFieldModel_valid_item_location(item_location_value):
+    with does_not_raise():
+        ItemFieldModel(
+            ind1=" ",
+            ind2="1",
+            item_call_tag="8528",
+            item_call_no="ReCAP 23-000000",
+            item_barcode="33433123456789",
+            item_price="1.00",
+            item_vendor_code="EVP",
+            item_agency="43",
+            item_location=item_location_value,
+            item_type="2",
+        )
+
+
+@pytest.mark.parametrize(
+    "item_type_value",
+    [
+        "2",
+        "55",
+    ],
+)
+def test_ItemFieldModel_valid_item_type(item_type_value):
+    with does_not_raise():
+        ItemFieldModel(
+            ind1=" ",
+            ind2="1",
+            item_call_tag="8528",
+            item_call_no="ReCAP 23-000000",
+            item_barcode="33433123456789",
+            item_price="1.00",
+            item_vendor_code="EVP",
+            item_agency="43",
+            item_location="rcmb2",
+            item_type=item_type_value,
+        )
+
+
+@pytest.mark.parametrize(
+    "ind1_value, ind2_value",
+    [("1", " "), ("2", "0"), ("0", "5")],
+)
+def test_ItemFieldModel_invalid_indicators(ind1_value, ind2_value):
+    with pytest.raises(ValidationError) as e:
+        ItemFieldModel(
+            ind1=ind1_value,
+            ind2=ind2_value,
+            item_call_tag="8528",
+            item_call_no="ReCAP 23-000000",
+            item_barcode="33433123456789",
+            item_price="1.00",
+            item_vendor_code="EVP",
+            item_agency="43",
+            item_location="rcmb2",
+            item_type="2",
+        )
+    error_types = [i["type"] for i in e.value.errors()]
+    assert error_types.count("literal_error") == 2
+    assert len(e.value.errors()) == 2
+
+
+@pytest.mark.parametrize(
+    "call_tag_value",
+    ["8520", "1111", "foo"],
+)
+def test_ItemFieldModel_invalid_call_tag(call_tag_value):
+    with pytest.raises(ValidationError) as e:
+        ItemFieldModel(
+            ind1=" ",
+            ind2="1",
+            item_call_tag=call_tag_value,
+            item_call_no="ReCAP 24-000000",
+            item_barcode="33433123456789",
+            item_price="1.00",
+            item_vendor_code="EVP",
+            item_agency="43",
+            item_location="rcmb2",
+            item_type="2",
+        )
+    assert e.value.errors()[0]["type"] == "literal_error"
+    assert len(e.value.errors()) == 1
+
+
+@pytest.mark.parametrize(
+    "call_no_value",
+    ["ReCAP 23-", "ReCAP", "ReCAP 00-000000", "ReCAP 24-0"],
+)
+def test_ItemFieldModel_invalid_call_nos(call_no_value):
+    with pytest.raises(ValidationError) as e:
+        ItemFieldModel(
+            ind1=" ",
+            ind2="1",
+            item_call_tag="8528",
+            item_call_no=call_no_value,
+            item_barcode="33433123456789",
+            item_price="1.00",
+            item_vendor_code="EVP",
+            item_agency="43",
+            item_location="rcmb2",
+            item_type="2",
+        )
+    assert e.value.errors()[0]["type"] == "string_pattern_mismatch"
+    assert len(e.value.errors()) == 1
+
+
+@pytest.mark.parametrize(
+    "vendor_code_value",
+    ["FOO", "BAR", "BAZ"],
+)
+def test_ItemFieldModel_invalid_vendor_code(vendor_code_value):
+    with pytest.raises(ValidationError) as e:
+        ItemFieldModel(
+            ind1=" ",
+            ind2="1",
+            item_call_tag="8528",
+            item_call_no="ReCAP 23-000000",
+            item_barcode="33433123456789",
+            item_price="1.00",
+            item_vendor_code=vendor_code_value,
+            item_agency="43",
+            item_location="rcmb2",
+            item_type="2",
+        )
+    assert e.value.errors()[0]["type"] == "literal_error"
+    assert len(e.value.errors()) == 1
+
+
+@pytest.mark.parametrize(
+    "item_location_value",
+    ["MAL", "foo", "bar"],
+)
+def test_ItemFieldModel_invalid_item_location(item_location_value):
+    with pytest.raises(ValidationError) as e:
+        ItemFieldModel(
+            ind1=" ",
+            ind2="1",
+            item_call_tag="8528",
+            item_call_no="ReCAP 23-000000",
+            item_barcode="33433123456789",
+            item_price="1.00",
+            item_vendor_code="EVP",
+            item_agency="43",
+            item_location=item_location_value,
+            item_type="2",
+        )
+    assert e.value.errors()[0]["type"] == "literal_error"
+    assert len(e.value.errors()) == 1
+
+
+@pytest.mark.parametrize(
+    "item_type_value",
+    ["monograph", 2, 55, 2.0],
+)
+def test_ItemFieldModel_invalid_item_type(item_type_value):
+    with pytest.raises(ValidationError) as e:
+        ItemFieldModel(
+            ind1=" ",
+            ind2="1",
+            item_call_tag="8528",
+            item_call_no="ReCAP 23-000000",
+            item_barcode="33433123456789",
+            item_price="1.00",
+            item_vendor_code="EVP",
+            item_agency="43",
+            item_location="rcmb2",
+            item_type=item_type_value,
+        )
+    assert e.value.errors()[0]["type"] == "literal_error"
+    assert len(e.value.errors()) == 1
