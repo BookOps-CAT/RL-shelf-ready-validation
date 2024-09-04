@@ -155,6 +155,7 @@ def test_MarcValidationError_missing_fields(mock_pamphlet_record):
 def test_MarcValidationError_monograph_multiple_errors(mock_monograph_record):
     del mock_monograph_record["item_fields"][0]["item_agency"]
     mock_monograph_record["bib_call_no"]["call_no"] = "ReCAP-24-119100"
+    mock_monograph_record["order_field"]["order_location"] = "MAG"
     with pytest.raises(ValidationError) as e:
         MonographRecord(**mock_monograph_record)
     errors = MarcValidationError(e.value.errors()).to_dict()

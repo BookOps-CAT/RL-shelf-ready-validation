@@ -57,34 +57,27 @@ class MarcError:
         self.loc_marc = self._loc2marc()
 
     def _get_msg(self) -> Optional[str]:
-        msg = self.original_error.get("msg", None)
-        if msg is None:
-            return None
-        elif self.original_error["type"] == "order_item_mismatch":
+        msg = self.original_error.get("msg")
+        if self.original_error["type"] == "order_item_mismatch" and msg is not None:
             return f"Invalid combination of item type, order location and item location: {eval(msg)}"  # noqa: 501
         else:
             return msg
 
     def _get_input(self):
-        input = self.original_error.get("input", None)
-        if input is None:
-            return None
-        elif self.original_error["type"] == "order_item_mismatch":
+        input = self.original_error.get("input")
+        if self.original_error["type"] == "order_item_mismatch":
             return eval(self.original_error["msg"])
         else:
             return input
 
     def _get_loc(self):
-        loc = self.original_error.get("loc", None)
-        if loc is None:
-            return None
-        elif self.original_error["type"] == "order_item_mismatch":
+        loc = self.original_error.get("loc")
+        if self.original_error["type"] == "order_item_mismatch":
             return (
                 "order_field",
                 "item_location",
                 "item_type",
             )
-
         else:
             return loc
 
