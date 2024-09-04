@@ -35,34 +35,49 @@ def get_subfield_from_field(
         return subfield_list
 
 
-@dataclass
 class BibCallNo:
     """A dataclass to model the 852 field in a vendor-provided MARC record."""
 
-    ind1: Optional[str]
-    ind2: Optional[str]
-    call_no: Optional[Union[str, List[str]]]
+    def __init__(
+        self,
+        ind1: Optional[str] = None,
+        ind2: Optional[str] = None,
+        call_no: Optional[Union[str, List[str]]] = None,
+        field: Optional[Union[dict, Field]] = None,
+    ):
+        self.ind1 = ind1
+        self.ind2 = ind2
+        self.call_no = call_no
 
-    @classmethod
-    def from_field(cls, field: Union[dict, Field]) -> "BibCallNo":
-        call_no = get_subfield_from_field(field=field, code="h")
-        if isinstance(field, Field):
-            return cls(
-                ind1=field.indicator1,
-                ind2=field.indicator2,
-                call_no=call_no,
-            )
-        elif isinstance(field, dict):
-            return cls(
-                ind1=field["ind1"],
-                ind2=field["ind2"],
-                call_no=call_no,
-            )
-        else:
-            raise ValueError("Field must be a dict or pymarc Field object.")
+        if all(i is None for i in [ind1, ind2, call_no]) and isinstance(field, Field):
+            self.ind1 = field.indicator1
+            self.ind2 = field.indicator2
+            self.call_no = get_subfield_from_field(field=field, code="h")
+        elif all(i is None for i in [ind1, ind2, call_no]) and isinstance(field, dict):
+            self.ind1 = field["ind1"]
+            self.ind2 = field["ind2"]
+            self.call_no = get_subfield_from_field(field=field, code="h")
 
-    def filter_none_vals(self) -> Dict:
-        return {k: v for k, v in asdict(self).items() if v is not None}
+    # @classmethod
+    # def from_field(cls, field: Union[dict, Field]) -> "BibCallNo":
+    #     call_no = get_subfield_from_field(field=field, code="h")
+    #     if isinstance(field, Field):
+    #         return cls(
+    #             ind1=field.indicator1,
+    #             ind2=field.indicator2,
+    #             call_no=call_no,
+    #         )
+    #     elif isinstance(field, dict):
+    #         return cls(
+    #             ind1=field["ind1"],
+    #             ind2=field["ind2"],
+    #             call_no=call_no,
+    #         )
+    #     else:
+    #         raise ValueError("Field must be a dict or pymarc Field object.")
+
+    # def filter_none_vals(self) -> Dict:
+    #     return {k: v for k, v in asdict(self).items() if v is not None}
 
 
 @dataclass

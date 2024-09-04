@@ -76,7 +76,7 @@ def mock_item_fields():
     ]
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def stub_record():
     bib = Record()
     bib.leader = "00820cam a22001935i 4500"

@@ -38,27 +38,27 @@ class VendorRecord(Record):
             case ("852", 0):
                 return BibCallNo(ind1=None, ind2=None, call_no=None)
             case ("852", 1):
-                return BibCallNo.from_marc_field(field=field_list[0])
+                return BibCallNo.from_field(field=field_list[0])
             case ("852", _):
-                return [BibCallNo.from_marc_field(field=i) for i in field_list]
+                return [BibCallNo.from_field(field=i) for i in field_list]
             case ("901", 0):
                 return BibVendorCode(ind1=None, ind2=None, vendor_code=None)
             case ("901", 1):
-                return BibVendorCode.from_marc_field(field=field_list[0])
+                return BibVendorCode.from_field(field=field_list[0])
             case ("901", _):
-                return [BibVendorCode.from_marc_field(field=i) for i in field_list]
+                return [BibVendorCode.from_field(field=i) for i in field_list]
             case ("050", 0):
                 return LCClass(ind1=None, ind2=None, lcc=None)
             case ("050", 1):
-                return LCClass.from_marc_field(field=field_list[0])
+                return LCClass.from_field(field=field_list[0])
             case ("050", _):
-                return [LCClass.from_marc_field(field=i) for i in field_list]
+                return [LCClass.from_field(field=i) for i in field_list]
             case ("910", 0):
                 return Library(ind1=None, ind2=None, library=None)
             case ("910", 1):
-                return Library.from_marc_field(field=field_list[0])
+                return Library.from_field(field=field_list[0])
             case ("910", _):
-                return [Library.from_marc_field(field=i) for i in field_list]
+                return [Library.from_field(field=i) for i in field_list]
             case ("949", 0):
                 return [
                     Item(
@@ -78,7 +78,7 @@ class VendorRecord(Record):
                     )
                 ]
             case ("949", _):
-                return [Item.from_marc_field(field=i) for i in field_list]
+                return [Item.from_field(field=i) for i in field_list]
             case ("960", 0):
                 return Order(
                     ind1=None,
@@ -88,9 +88,9 @@ class VendorRecord(Record):
                     order_price=None,
                 )
             case ("960", 1):
-                return Order.from_marc_field(field=field_list[0])
+                return Order.from_field(field=field_list[0])
             case ("960", _):
-                return [Order.from_marc_field(field=i) for i in field_list]
+                return [Order.from_field(field=i) for i in field_list]
             case ("980", 0):
                 return Invoice(
                     ind1=None,
@@ -104,9 +104,9 @@ class VendorRecord(Record):
                     invoice_copies=None,
                 )
             case ("980", 1):
-                return Invoice.from_marc_field(field=field_list[0])
+                return Invoice.from_field(field=field_list[0])
             case ("980", _):
-                return [Invoice.from_marc_field(field=i) for i in field_list]
+                return [Invoice.from_field(field=i) for i in field_list]
             case _:
                 return None
 
@@ -145,6 +145,34 @@ class VendorRecord(Record):
 
         else:
             return "unknown"
+
+    def to_dict(self) -> Dict[str, Any]:
+        record: Dict = {
+            "leader": str(self.leader),
+            "fields": [],
+        }
+        for field in self:
+            if field.is_control_field():
+                record["fields"].append({field.tag: field.data})
+            else:
+                record["fields"].append(
+                    {
+                        field.tag: {
+                            "ind1": field.indicator1,
+                            "ind2": field.indicator2,
+                            "subfields": [{s.code: s.value} for s in field.subfields],
+                        }
+                    }
+                )
+        record["bib_call_no"] = self.__bib_call_no
+        record["bib_vendor_code"] = self.__bib_vendor_code
+        record["lc_class"] = self.__lc_class
+        record["library_field"] = self.__library_field
+        record["order_field"] = self.__order_field
+        record["invoice_field"] = self.__invoice_field
+        record["item_fields"] = self.__item_fields
+        record["material_type"] = self.material_type
+        return record
 
     def pydantic_dict_input(self) -> Dict[str, Any]:
         record: Dict = {

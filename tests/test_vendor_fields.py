@@ -64,7 +64,7 @@ def test_BibCallNo():
     }
     assert bib_2.filter_none_vals() == {"ind1": "8", "ind2": " "}
     assert bib_3.filter_none_vals() == {}
-    assert BibCallNo.from_marc_field(pymarc_field) == BibCallNo(
+    assert BibCallNo.from_field(pymarc_field) == BibCallNo(
         ind1="8", ind2=" ", call_no="ReCAP 24-111111"
     )
 
@@ -85,7 +85,7 @@ def test_BibVendorCode():
     }
     assert vendor_2.filter_none_vals() == {"ind1": " ", "ind2": " "}
     assert vendor_3.filter_none_vals() == {}
-    assert BibVendorCode.from_marc_field(pymarc_field) == BibVendorCode(
+    assert BibVendorCode.from_field(pymarc_field) == BibVendorCode(
         ind1=" ", ind2=" ", vendor_code="LEILA"
     )
 
@@ -108,7 +108,7 @@ def test_LCClass():
     }
     assert lc_2.filter_none_vals() == {"ind1": " ", "ind2": " "}
     assert lc_3.filter_none_vals() == {}
-    assert LCClass.from_marc_field(pymarc_field) == LCClass(
+    assert LCClass.from_field(pymarc_field) == LCClass(
         ind1=" ", ind2="4", lcc="DK504.73"
     )
 
@@ -131,9 +131,7 @@ def test_Library():
     }
     assert library_2.filter_none_vals() == {"ind1": " ", "ind2": " "}
     assert library_3.filter_none_vals() == {}
-    assert Library.from_marc_field(pymarc_field) == Library(
-        ind1=" ", ind2=" ", library="RL"
-    )
+    assert Library.from_field(pymarc_field) == Library(ind1=" ", ind2=" ", library="RL")
 
 
 def test_Order():
@@ -164,7 +162,7 @@ def test_Order():
     }
     assert order_2.filter_none_vals() == {"ind1": " ", "ind2": " "}
     assert order_3.filter_none_vals() == {}
-    assert Order.from_marc_field(pymarc_field) == Order(
+    assert Order.from_field(pymarc_field) == Order(
         ind1=" ", ind2=" ", order_price="200", order_location="MAP", order_fund="123"
     )
 
@@ -238,7 +236,7 @@ def test_Invoice():
     }
     assert invoice_3.filter_none_vals() == {}
 
-    assert Invoice.from_marc_field(pymarc_field) == Invoice(
+    assert Invoice.from_field(pymarc_field) == Invoice(
         ind1=" ",
         ind2=" ",
         invoice_date="240101",
@@ -343,7 +341,7 @@ def test_Item():
         "item_location": "rcmf2",
     }
     assert item_3.filter_none_vals() == {}
-    assert Item.from_marc_field(pymarc_field) == Item(
+    assert Item.from_field(pymarc_field) == Item(
         ind1=" ",
         ind2="1",
         item_call_tag="8528",

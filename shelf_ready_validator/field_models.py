@@ -77,8 +77,8 @@ class ItemFieldModel(BaseModel):
     ]
     item_barcode: Annotated[str, Field(..., pattern=r"^33433[0-9]{9}$")]
     item_price: Annotated[str, Field(..., pattern=r"^\d{1,}\.\d{2}$")]
-    item_message: Optional[Annotated[str, Field(..., pattern=r"^[^a-z]+")]] = None
-    message: Optional[Annotated[str, Field(..., pattern=r"^[^a-z]+")]] = None
+    item_message: Optional[str] = None
+    message: Optional[str] = None
     item_vendor_code: Annotated[Literal["EVP", "AUXAM", "LEILA"], Field(...)]
     item_agency: Literal["43"]
     item_location: Optional[

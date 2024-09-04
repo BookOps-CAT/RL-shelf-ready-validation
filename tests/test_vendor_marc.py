@@ -52,6 +52,59 @@ def test_VendorRecord_dupe_vals(stub_record_with_dupes):
     assert isinstance(record._VendorRecord__order_field[0], Order)
 
 
+# def test_VendorRecord_to_dict(stub_record):
+#     record = VendorRecord(leader=stub_record.leader, fields=stub_record.fields)
+#     record_dict = record.to_dict()
+#     assert record_dict["bib_call_no"] == {
+#         "ind1": "8",
+#         "ind2": " ",
+#         "call_no": "ReCAP 23-100000",
+#     }
+#     assert record_dict["bib_vendor_code"] == {
+#         "ind1": " ",
+#         "ind2": " ",
+#         "vendor_code": "EVP",
+#     }
+#     assert record_dict["invoice_field"] == {
+#         "ind1": " ",
+#         "ind2": " ",
+#         "invoice_date": "240101",
+#         "invoice_price": "100",
+#         "invoice_shipping": "100",
+#         "invoice_tax": "000",
+#         "invoice_number": "123456",
+#         "invoice_net_price": "200",
+#         "invoice_copies": "1",
+#     }
+#     assert record_dict["item_fields"] == [
+#         {
+#             "ind1": " ",
+#             "ind2": "1",
+#             "item_call_tag": "8528",
+#             "item_call_no": "ReCAP 23-100000",
+#             "item_barcode": "33433123456789",
+#             "item_price": "1.00",
+#             "item_message": "foo",
+#             "message": "bar",
+#             "item_vendor_code": "AUXAM",
+#             "item_agency": "43",
+#             "item_location": "rcmf2",
+#             "item_volume": "1",
+#             "item_type": "55",
+#         }
+#     ]
+#     assert record_dict["lc_class"] == {"ind1": " ", "ind2": "4", "lcc": "DK504.73"}
+#     assert record_dict["library_field"] == {"ind1": " ", "ind2": " ", "library": "RL"}
+#     assert record_dict["order_field"] == {
+#         "ind1": " ",
+#         "ind2": " ",
+#         "order_price": "100",
+#         "order_location": "MAF",
+#         "order_fund": "123456apprv",
+#     }
+#     assert record_dict["material_type"] == "monograph"
+
+
 def test_VendorRecord_pydantic_input(stub_record):
     record = VendorRecord(leader=stub_record.leader, fields=stub_record.fields)
     record_input = record.pydantic_dict_input()
@@ -121,13 +174,13 @@ def test_VendorRecord_pydantic_input_dupe_fields(stub_record_with_dupes):
     assert isinstance(record_input["material_type"], str)
 
 
-def test_MaterialType_monograph(stub_record):
+def test_material_type_monograph(stub_record):
     record = VendorRecord(leader=stub_record.leader, fields=stub_record.fields)
     assert "Catalogues Raissones" not in stub_record.subjects
     assert record.material_type == "monograph"
 
 
-def test_MaterialType_pamphlet():
+def test_material_type_pamphlet():
     pamphlet_record = Record()
     pamphlet_record.leader = Leader("00820cam a22001935i 4500")
     pamphlet_record.add_field(
@@ -143,7 +196,7 @@ def test_MaterialType_pamphlet():
     assert record.material_type == "pamphlet"
 
 
-def test_MaterialType_multivol():
+def test_material_type_multivol():
     multivol_record = Record()
     multivol_record.leader = Leader("00820foo a22001935i 4500")
     multivol_record.add_field(
@@ -159,7 +212,7 @@ def test_MaterialType_multivol():
     assert record.material_type == "multipart"
 
 
-def test_MaterialType_dance():
+def test_material_type_dance():
     dance_record = Record()
     dance_record.leader = Leader("00820foo a22001935i 4500")
     dance_record.add_field(
@@ -178,7 +231,7 @@ def test_MaterialType_dance():
     assert isinstance(record._VendorRecord__order_field, Order)
 
 
-def test_MaterialType_dance_multiple_orders():
+def test_material_type_dance_multiple_orders():
     dance_record = Record()
     dance_record.leader = Leader("00820foo a22001935i 4500")
     dance_record.add_field(
@@ -208,7 +261,7 @@ def test_MaterialType_dance_multiple_orders():
     assert isinstance(record._VendorRecord__order_field, list)
 
 
-def test_MaterialType_catalogue():
+def test_material_type_catalogue():
     catalogue_record = Record()
     catalogue_record.leader = Leader("00820cam a22001935i 4500")
     catalogue_record.add_field(
@@ -227,13 +280,13 @@ def test_MaterialType_catalogue():
     assert record.material_type == "catalogue_raissonne"
 
 
-def test_MaterialType_empty_record():
+def test_material_type_empty_record():
     marc_record = Record()
     record = VendorRecord(leader=marc_record.leader, fields=marc_record.fields)
     assert record.material_type == "unknown"
 
 
-def test_MaterialType_unknown():
+def test_material_type_unknown():
     unknown_record = Record()
     unknown_record.leader = "00820foo a22001935i 4500"
     record = VendorRecord(leader=unknown_record.leader, fields=unknown_record.fields)
